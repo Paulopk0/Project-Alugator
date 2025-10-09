@@ -11,26 +11,30 @@ class UserService {
                 const sql = 'INSERT INTO users (name, email, phoneNumber, password) VALUES (?,?,?,?)';
                 const params = [name, email, phoneNumber, passwordHash];
 
+                console.log('Attempting to save user:', { name, email, phoneNumber });
+
                 db.run(sql, params, function (err) {
                     if (err) {
+                        console.error('Database save error:', err);
                         reject({
                             status: 400,
-                            message: "Este email já está em uso."
+                            message: err.code === 'SQLITE_CONSTRAINT' ?
+                                "Este email já está em uso." :
+                                "Erro ao salvar usuário."
                         });
                         return;
                     }
-                    resolve({ 
+                    console.log('User saved successfully with ID:', this.lastID);
+                    resolve({
                         status: 201,
-                        userId: this.lastID,
-                        message: "Usuário cadastrado com sucesso!"
+                        message: "Usuário cadastrado com sucesso!",
+                        userId: this.lastID
                     });
                 });
             });
         } catch (error) {
-            throw {
-                status: 500,
-                message: "Erro interno do servidor"
-            };
+            console.error('Service error:', error);
+            throw error;
         }
     }
 
