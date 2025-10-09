@@ -46,3 +46,8 @@ yarn-error.*
 # Arquivos de banco de dados SQLite
 *.sqlite
 *.db
+
+# Dependencies lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
