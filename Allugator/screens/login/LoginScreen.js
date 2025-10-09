@@ -2,40 +2,68 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, StatusBar, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
 import CustomButton from '../../components/CustomButton/CustomButton';
 import CustomTextInput from '../../components/CustomTextInput/CustomTextInput';
+import MessageDisplay from '../../components/MessageDisplay/MessageDisplay';
+import { loginUser } from '../../apis/AuthApi'; 
 
 const COLORS = {
-  background: '#F0FFF0', 
+  background: '#F0FFF0',
   primary: '#1DE9B6',
-  darkText:'#444444ff',
+  darkText: '#444444ff',
   white: '#FFFFFF',
 };
 
-// Obtém a altura da tela para o posicionamento
 const screenHeight = Dimensions.get('window').height;
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [feedback, setFeedback] = useState({ message: '', type: '' });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const handleLogin = () => {
-    console.log('Tentando logar com:', email, password);
+  const handleLogin = async () => {
+    try {
+      if (!email || !password) {
+        setFeedback({
+          message: 'Por favor, preencha todos os campos.',
+          type: 'error'
+        });
+        return;
+      }
+
+      // Chama a função da API para fazer login
+      await loginUser(email, password);
+      
+      setFeedback({
+        message: 'Login realizado com sucesso!',
+        type: 'success'
+      });
+
+      // Aguarda um pouco antes de navegar para o usuário ver a mensagem
+      setTimeout(() => {
+        // 'replace' impede o usuário de voltar para a tela de login
+        navigation.replace('Home'); // Altere 'Home' se o nome da sua tela principal for outro
+      }, 1500);
+
+    } catch (error) {
+      setFeedback({
+        message: error.message || 'E-mail ou senha inválidos.',
+        type: 'error'
+      });
+    }
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      {/* Fundo colorido que ocupa 100% da tela com o header */}
       <View style={styles.background}>
         <Text style={styles.headerText}>Bem-Vindo</Text>
       </View>
 
-      {/* Conteúdo rolável que fica por cima */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
+        keyboardShouldPersistTaps="handled" // Ajuda a gerenciar toques quando o teclado está aberto
       >
-        {/* Card com o formulário */}
         <View style={styles.contentCard}>
           <CustomTextInput
             label="Usuário Ou Email"
@@ -73,6 +101,13 @@ const LoginScreen = ({ navigation }) => {
           </View>
         </View>
       </ScrollView>
+
+      {/* O MessageDisplay deve ficar fora do ScrollView para ter posicionamento absoluto na tela */}
+      <MessageDisplay 
+        message={feedback.message}
+        type={feedback.type}
+        onHide={() => setFeedback({ message: '', type: '' })}
+      />
     </View>
   );
 };
@@ -96,14 +131,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingTop: screenHeight * 0.25,
   },
-   contentCard: {
-    flex: 1, 
+  contentCard: {
+    flex: 1,
     backgroundColor: COLORS.background,
     borderTopLeftRadius: 60,
     borderTopRightRadius: 60,
     paddingTop: 40,
     paddingHorizontal: 40,
-    paddingBottom: 80, // Aumentei um pouco para dar um respiro no final
+    paddingBottom: 40,
   },
   forgotPasswordContainer: {
     alignSelf: 'flex-end',
@@ -115,7 +150,8 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 'auto', 
+    paddingBottom: 20,
   },
   footerText: {
     color: COLORS.darkText,

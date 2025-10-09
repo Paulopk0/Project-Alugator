@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import CustomButton from '../../components/CustomButton/CustomButton';
 import CustomTextInput from '../../components/CustomTextInput/CustomTextInput';
+import { registerUser } from '../../apis/AuthApi';
+import MessageDisplay from '../../components/MessageDisplay/MessageDisplay';
 
 const COLORS = {
   background: '#F0FFF0', 
@@ -25,12 +27,31 @@ const RegisterScreen = ({ navigation }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
 
-  const handleRegister = () => {
+    const [feedback, setFeedback] = useState({ message: '', type: '' });
+
+  const handleRegister = async () => {
+    // 4. Modificamos a função handleRegister para usar o setFeedback
     if (password !== confirmPassword) {
-      alert('As senhas não conferem!');
+      setFeedback({ message: 'As senhas não conferem!', type: 'error' });
       return;
     }
-    console.log('Registrando usuário:', name, email, phoneNumber);
+
+    try {
+      const userData = { name, email, phoneNumber, password };
+      await registerUser(userData);
+
+      // Feedback de sucesso
+      setFeedback({ message: 'Usuário cadastrado com sucesso!', type: 'success' });
+      
+      // Aguarda um pouco antes de navegar para o usuário ver a mensagem
+      setTimeout(() => {
+        navigation.navigate('Login'); // Use o nome da sua tela de Login
+      }, 1500);
+
+    } catch (error) {
+      // Feedback de erro da API
+      setFeedback({ message: error.message || 'Erro desconhecido', type: 'error' });
+    }
   };
 
   return (
@@ -105,6 +126,11 @@ const RegisterScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <MessageDisplay
+        message={feedback.message}
+        type={feedback.type}
+        onHide={() => setFeedback({ message: '', type: '' })}
+      />
     </View>
   );
 };
