@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 
 // Import screens
-import AuthScreen from './screens/auth/AuthScreen';
+import AuthScreen from './screens/auth/authScreen';
 import LoginScreen from './screens/login/LoginScreen';
 import RegisterScreen from './screens/register/RegisterScreen';
 import ForgotPasswordScreen from './screens/forgotpassword/ForgotPasswordScreen';
@@ -16,7 +16,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <StatusBar style="auto" />
-      <Stack.Navigator 
+      <Stack.Navigator
         initialRouteName="Auth"
         screenOptions={{
           headerShown: false,
