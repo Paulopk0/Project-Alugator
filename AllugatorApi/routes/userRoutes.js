@@ -5,6 +5,8 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
 
 router.post('/register', userController.register.bind(userController));
 router.post('/login', userController.login.bind(userController));
+router.get('/', userController.getAll.bind(userController));
+router.get('/:id', userController.get.bind(userController));
 
 // Rota protegida de exemplo - requer token JWT
 router.get('/profile', authenticateToken, (req, res) => {

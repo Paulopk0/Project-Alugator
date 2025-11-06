@@ -97,6 +97,58 @@ class UserService {
             };
         }
     }
+
+    async getAll() {
+        try {
+            return new Promise((resolve, reject) => {
+                const sql = "SELECT id, name, email, phoneNumber FROM users";
+                db.all(sql, [], (err, rows) => {
+                    if (err) {
+                        reject({
+                            status: 500,
+                            message: "Erro ao buscar usuários."
+                        });
+                        return;
+                    }
+                    resolve({
+                        status: 200,
+                        users: rows
+                    });
+                });
+            });
+        } catch (error) {
+            throw {
+                status: 500,
+                message: "Erro interno do servidor"
+            };
+        }
+    }
+
+    async get(userId) {
+        try {
+            return new Promise((resolve, reject) => {
+                const sql = "SELECT id, name, email, phoneNumber FROM users WHERE id = ?";
+                db.get(sql, [userId], (err, user) => {
+                    if (err || !user) {
+                        reject({
+                            status: 404,
+                            message: "Usuário não encontrado."
+                        });
+                        return;
+                    }
+                    resolve({
+                        status: 200,
+                        user: user
+                    });
+                });
+            });
+        } catch (error) {
+            throw {
+                status: 500,
+                message: "Erro interno do servidor"
+            };
+        }
+    }
 }
 
 module.exports = new UserService();
