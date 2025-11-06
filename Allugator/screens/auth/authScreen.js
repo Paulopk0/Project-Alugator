@@ -16,7 +16,6 @@ const COLORS = {
  */
 
 const AuthScreen = ({ navigation }) => {
-  console.log('AuthScreen rendering...'); // Debug log
 
   return (
     <View style={styles.container}>

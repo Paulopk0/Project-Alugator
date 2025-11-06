@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 
 // Import screens
-import AuthScreen from './screens/auth/authScreen';
+import AuthScreen from './screens/auth/AuthScreen';
 import LoginScreen from './screens/login/LoginScreen';
 import RegisterScreen from './screens/register/RegisterScreen';
 import ForgotPasswordScreen from './screens/forgotpassword/ForgotPasswordScreen';
@@ -13,7 +13,7 @@ import HomeScreen from './screens/home/HomeScreen';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  console.log('App rendering...');
+  console.log('App iniciando...');
   return (
     <NavigationContainer>
       <StatusBar style="auto" />

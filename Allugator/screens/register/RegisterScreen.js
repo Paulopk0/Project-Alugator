@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import CustomButton from '../../components/CustomButton/CustomButton';
 import CustomTextInput from '../../components/CustomTextInput/CustomTextInput';
-import { registerUser } from '../../apis/AuthApi';
+import { register } from '../../apis/AuthApi';
 import MessageDisplay from '../../components/MessageDisplay/MessageDisplay';
 
 const COLORS = {
@@ -38,7 +38,7 @@ const RegisterScreen = ({ navigation }) => {
 
     try {
       const userData = { name, email, phoneNumber, password };
-      await registerUser(userData);
+      await register(userData);
 
       // Feedback de sucesso
       setFeedback({ message: 'Usuário cadastrado com sucesso!', type: 'success' });
