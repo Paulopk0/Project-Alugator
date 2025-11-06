@@ -1,4 +1,17 @@
+import AuthStorage from '../services/AuthStorage';
 const API_URL = 'http://localhost:3000';
+
+
+/**
+ * Função para obter headers com token de autenticação
+ */
+const getAuthHeaders = async () => {
+  const token = await AuthStorage.getToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
 
 /**
  * Função para fazer login de um usuário
@@ -6,7 +19,7 @@ const API_URL = 'http://localhost:3000';
  * @param {string} password - Senha do usuário
  * @returns {Promise<Object>} Dados do usuário logado
  */
-const loginUser = async (email, password) => {
+const login = async (email, password) => {
   console.log('--- Iniciando Tentativa de Login ---');
   console.log('Email recebido:', email);
   // Não vamos logar a senha por segurança, mas sabemos que ela foi recebida.
@@ -51,7 +64,7 @@ const loginUser = async (email, password) => {
  * @param {string} userData.password - Senha do usuário
  * @returns {Promise<Object>} Dados do usuário registrado
  */
-const registerUser = async (userData) => {
+const register = async (userData) => {
   console.log('--- Iniciando Tentativa de Registro ---');
   console.log('Dados de usuário recebidos:', userData);
 
@@ -86,4 +99,42 @@ const registerUser = async (userData) => {
   }
 };
 
-export { loginUser, registerUser };
+/**
+ * Função para obter perfil do usuário autenticado
+ * @returns {Promise<Object>} Dados do perfil
+ */
+const getUserProfile = async () => {
+  try {
+    const headers = await getAuthHeaders();
+    
+    const response = await fetch(`${API_URL}/profile`, {
+      method: 'GET',
+      headers
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Falha ao obter perfil');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao obter perfil:', error);
+    throw error;
+  }
+};
+
+/**
+ * Função para fazer logout
+ */
+const logout = async () => {
+  try {
+    await AuthStorage.clearAuth();
+  } catch (error) {
+    console.error('Erro ao fazer logout:', error);
+    throw error;
+  }
+};
+
+export { login, register, getUserProfile, logout };

@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, StatusBar, TouchableOpacity, ScrollView, Dimens
 import CustomButton from '../../components/CustomButton/CustomButton';
 import CustomTextInput from '../../components/CustomTextInput/CustomTextInput';
 import MessageDisplay from '../../components/MessageDisplay/MessageDisplay';
-import { loginUser } from '../../apis/AuthApi'; 
+import { login } from '../../apis/AuthApi';
+import AuthStorage from '../../services/AuthStorage'; 
 
 const COLORS = {
   background: '#F0FFF0',
@@ -31,7 +32,13 @@ const LoginScreen = ({ navigation }) => {
       }
 
       // Chama a função da API para fazer login
-      await loginUser(email, password);
+      const response = await login(email, password);
+      
+      // Salva o token e os dados do usuário
+      if (response.token) {
+        await AuthStorage.saveToken(response.token);
+        await AuthStorage.saveUser(response.user);
+      }
       
       setFeedback({
         message: 'Login realizado com sucesso!',

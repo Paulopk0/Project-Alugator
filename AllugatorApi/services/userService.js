@@ -1,7 +1,22 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const db = require('../database/config/database.js');
 
 class UserService {
+    /**
+     * Gera um token JWT para o usuário
+     */
+    generateToken(user) {
+        return jwt.sign(
+            {
+                id: user.id,
+                email: user.email,
+                name: user.name
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+        );
+    }
     async register(name, email, phoneNumber, password) {
         try {
             const salt = bcrypt.genSaltSync(10);
@@ -60,6 +75,9 @@ class UserService {
                         return;
                     }
 
+                    // Gera o token JWT
+                    const token = this.generateToken(user);
+
                     resolve({
                         status: 200,
                         user: {
@@ -67,6 +85,7 @@ class UserService {
                             name: user.name,
                             email: user.email
                         },
+                        token: token,
                         message: "Login realizado com sucesso!"
                     });
                 });
