@@ -6,9 +6,9 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
 router.post('/register', userController.register.bind(userController));
 router.post('/login', userController.login.bind(userController));
 router.get('/', userController.getAll.bind(userController));
-router.get('/:id', userController.get.bind(userController));
 
 // Rota protegida de exemplo - requer token JWT
+// IMPORTANT: rota específica deve vir antes da rota dinâmica '/:id'
 router.get('/profile', authenticateToken, (req, res) => {
     res.json({
         status: 200,
@@ -16,5 +16,8 @@ router.get('/profile', authenticateToken, (req, res) => {
         user: req.user
     });
 });
+
+// Rota dinâmica para obter usuário por ID (deve ficar após '/profile')
+router.get('/:id', userController.get.bind(userController));
 
 module.exports = router;

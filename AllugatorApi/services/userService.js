@@ -26,8 +26,6 @@ class UserService {
                 const sql = 'INSERT INTO users (name, email, phoneNumber, password) VALUES (?,?,?,?)';
                 const params = [name, email, phoneNumber, passwordHash];
 
-                console.log('Attempting to save user:', { name, email, phoneNumber });
-
                 db.run(sql, params, function (err) {
                     if (err) {
                         console.error('Database save error:', err);
@@ -39,7 +37,6 @@ class UserService {
                         });
                         return;
                     }
-                    console.log('User saved successfully with ID:', this.lastID);
                     resolve({
                         status: 201,
                         message: "Usuário cadastrado com sucesso!",

@@ -90,11 +90,23 @@ class ItemService {
                     return;
                 }
 
-                // Parse photos de JSON string para array
-                const itemsWithPhotos = items.map(item => ({
-                    ...item,
-                    photos: JSON.parse(item.photos || '[]')
-                }));
+                // Parse photos: se for JSON array válido faz parse, senão trata como string simples
+                const itemsWithPhotos = items.map(item => {
+                    let photos = [];
+                    if (item.photos) {
+                        try {
+                            // Tenta fazer parse como JSON
+                            photos = JSON.parse(item.photos);
+                        } catch (e) {
+                            // Se falhar, trata como string simples e retorna array com ela
+                            photos = [item.photos];
+                        }
+                    }
+                    return {
+                        ...item,
+                        photos
+                    };
+                });
 
                 resolve({
                     status: 200,
@@ -136,11 +148,21 @@ class ItemService {
                     return;
                 }
 
+                // Parse photos com fallback para string simples
+                let photos = [];
+                if (item.photos) {
+                    try {
+                        photos = JSON.parse(item.photos);
+                    } catch (e) {
+                        photos = [item.photos];
+                    }
+                }
+
                 resolve({
                     status: 200,
                     item: {
                         ...item,
-                        photos: JSON.parse(item.photos || '[]')
+                        photos
                     }
                 });
             });
@@ -164,10 +186,20 @@ class ItemService {
                     return;
                 }
 
-                const itemsWithPhotos = items.map(item => ({
-                    ...item,
-                    photos: JSON.parse(item.photos || '[]')
-                }));
+                const itemsWithPhotos = items.map(item => {
+                    let photos = [];
+                    if (item.photos) {
+                        try {
+                            photos = JSON.parse(item.photos);
+                        } catch (e) {
+                            photos = [item.photos];
+                        }
+                    }
+                    return {
+                        ...item,
+                        photos
+                    };
+                });
 
                 resolve({
                     status: 200,
@@ -310,10 +342,20 @@ class ItemService {
                     return;
                 }
 
-                const itemsWithPhotos = items.map(item => ({
-                    ...item,
-                    photos: JSON.parse(item.photos || '[]')
-                }));
+                const itemsWithPhotos = items.map(item => {
+                    let photos = [];
+                    if (item.photos) {
+                        try {
+                            photos = JSON.parse(item.photos);
+                        } catch (e) {
+                            photos = [item.photos];
+                        }
+                    }
+                    return {
+                        ...item,
+                        photos
+                    };
+                });
 
                 resolve({
                     status: 200,

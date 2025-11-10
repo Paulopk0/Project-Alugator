@@ -5,14 +5,23 @@ const userRoutes = require('./routes/userRoutes');
 const itemRoutes = require('./routes/itemRoutes');
 
 const app = express();
-app.use(cors());
+// Configuração explícita de CORS para permitir o header Authorization
+const corsOptions = {
+    origin: true, // permite refletir a origem do request (padrão permissivo durante desenvolvimento)
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
 // Rotas
-app.use('/api', userRoutes);
+// Registrar rotas de itens antes das rotas de usuário para evitar conflito com a rota dinâmica '/:id' em userRoutes
 app.use('/api', itemRoutes);
+app.use('/api', userRoutes);
 
 // Rota de teste
 app.get('/', (req, res) => {
@@ -28,5 +37,4 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`🚀 API rodando em http://localhost:${PORT}`);
-    console.log(`📚 Documentação: http://localhost:${PORT}/`);
 });
