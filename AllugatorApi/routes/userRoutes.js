@@ -20,4 +20,13 @@ router.get('/profile', authenticateToken, (req, res) => {
 // Rota dinâmica para obter usuário por ID (deve ficar após '/profile')
 router.get('/:id', userController.get.bind(userController));
 
+// Rota protegida de exemplo - requer token JWT
+router.get('/profile', authenticateToken, (req, res) => {
+    res.json({
+        status: 200,
+        message: 'Perfil do usuário autenticado',
+        user: req.user
+    });
+});
+
 module.exports = router;

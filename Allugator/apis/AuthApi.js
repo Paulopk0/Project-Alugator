@@ -14,6 +14,17 @@ const getAuthHeaders = async () => {
 };
 
 /**
+ * Função para obter headers com token de autenticação
+ */
+const getAuthHeaders = async () => {
+  const token = await AuthStorage.getToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
+/**
  * Função para fazer login de um usuário
  * @param {string} email - Email do usuário
  * @param {string} password - Senha do usuário
