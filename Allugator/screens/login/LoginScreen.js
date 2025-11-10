@@ -45,10 +45,9 @@ const LoginScreen = ({ navigation }) => {
         type: 'success'
       });
 
-      // Aguarda um pouco antes de navegar para o usuário ver a mensagem
+      
       setTimeout(() => {
-        // 'replace' impede o usuário de voltar para a tela de login
-        navigation.replace('Home'); // Altere 'Home' se o nome da sua tela principal for outro
+        navigation.replace('Store'); 
       }, 1500);
 
     } catch (error) {
@@ -69,11 +68,11 @@ const LoginScreen = ({ navigation }) => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContainer}
-        keyboardShouldPersistTaps="handled" // Ajuda a gerenciar toques quando o teclado está aberto
+        keyboardShouldPersistTaps="handled" 
       >
         <View style={styles.contentCard}>
           <CustomTextInput
-            label="Usuário Ou Email"
+            label="Email"
             placeholder="exemplo@exemplo.com"
             value={email}
             onChangeText={setEmail}
@@ -109,7 +108,6 @@ const LoginScreen = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      {/* O MessageDisplay deve ficar fora do ScrollView para ter posicionamento absoluto na tela */}
       <MessageDisplay 
         message={feedback.message}
         type={feedback.type}
