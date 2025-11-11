@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,12 @@ import {
   TouchableOpacity,
   Dimensions,
   Image,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
-import { getItemImage } from '../../assets/images/imageMap';
+import { useFocusEffect } from '@react-navigation/native';
+import { getUserFavorites, toggleFavorite } from '../../../apis/FavoriteApi';
+import { getItemImage } from '../../../assets/images/imageMap';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -20,12 +24,65 @@ const COLORS = {
   lightGray: '#E0E0E0',
 };
 
-const SearchResultsScreen = ({ navigation, route }) => {
-  const { items = [], filters = {} } = route.params || {};
+const FavoritesScreen = ({ navigation }) => {
+  const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Recarrega favoritos sempre que a tela ganhar foco
+  useFocusEffect(
+    useCallback(() => {
+      loadFavorites();
+    }, [])
+  );
+
+  const loadFavorites = async () => {
+    try {
+      setLoading(true);
+      const response = await getUserFavorites();
+      
+      if (response.favorites) {
+        setFavorites(response.favorites);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar favoritos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadFavorites();
+    setRefreshing(false);
+  };
+
+  const handleRemoveFavorite = async (itemId) => {
+    try {
+      await toggleFavorite(itemId, true); // true = está favoritado, então remove
+      // Remove da lista local
+      setFavorites(prev => prev.filter(fav => fav.id !== itemId));
+    } catch (error) {
+      console.error('Erro ao remover favorito:', error);
+    }
+  };
+
+  const handleItemPress = (item) => {
+    // TODO: Navegar para detalhes do item
+    console.log('Item selecionado:', item.id);
+  };
 
   const formatPrice = (price) => {
     return `R$ ${parseFloat(price).toFixed(2)}/dia`;
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -36,6 +93,14 @@ const SearchResultsScreen = ({ navigation, route }) => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
       >
         {/* Card branco com conteúdo */}
         <View style={styles.contentCard}>
@@ -47,58 +112,56 @@ const SearchResultsScreen = ({ navigation, route }) => {
             >
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
-            <Text style={styles.title}>Resultados da Busca</Text>
+            <Text style={styles.title}>Meus Favoritos</Text>
             <View style={styles.placeholder} />
           </View>
 
-          {/* Informação sobre os filtros aplicados */}
-          {filters.searchText && (
-            <View style={styles.filterInfo}>
-              <Text style={styles.filterLabel}>Buscando por:</Text>
-              <Text style={styles.filterValue}>"{filters.searchText}"</Text>
-            </View>
-          )}
-
-          {/* Contador de resultados */}
-          <View style={styles.resultsCounter}>
-            <Text style={styles.resultsText}>
-              {items.length === 0
-                ? 'Nenhum resultado encontrado'
-                : `${items.length} ${items.length === 1 ? 'item encontrado' : 'itens encontrados'}`}
+          {/* Contador de favoritos */}
+          <View style={styles.counterContainer}>
+            <Text style={styles.counterText}>
+              {favorites.length === 0
+                ? 'Você ainda não tem favoritos'
+                : `${favorites.length} ${favorites.length === 1 ? 'item favoritado' : 'itens favoritados'}`}
             </Text>
           </View>
 
-          {/* Lista de itens */}
-          {items.length === 0 ? (
+          {/* Lista de favoritos */}
+          {favorites.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🔍</Text>
-              <Text style={styles.emptyTitle}>Nenhum item encontrado</Text>
+              <Text style={styles.emptyIcon}>♡</Text>
+              <Text style={styles.emptyTitle}>Nenhum favorito ainda</Text>
               <Text style={styles.emptyDescription}>
-                Tente ajustar os filtros de busca para encontrar o que procura
+                Adicione itens aos favoritos para encontrá-los facilmente aqui
               </Text>
               <TouchableOpacity
-                style={styles.newSearchButton}
-                onPress={() => navigation.goBack()}
+                style={styles.browseButton}
+                onPress={() => navigation.navigate('Store')}
               >
-                <Text style={styles.newSearchButtonText}>Nova Busca</Text>
+                <Text style={styles.browseButtonText}>Explorar Itens</Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.itemsGrid}>
-              {items.map((item) => (
+              {favorites.map((item) => (
                 <TouchableOpacity
                   key={item.id}
                   style={styles.itemCard}
-                  onPress={() => {
-                    // TODO: Navegar para detalhes do item
-                    console.log('Item selecionado:', item.id);
-                  }}
+                  onPress={() => handleItemPress(item)}
                 >
                   <Image
                     source={getItemImage(item.photos)}
                     style={styles.itemImage}
                     resizeMode="cover"
                   />
+                  
+                  {/* Botão de remover favorito */}
+                  <TouchableOpacity
+                    style={styles.favoriteButton}
+                    onPress={() => handleRemoveFavorite(item.id)}
+                  >
+                    <Text style={styles.favoriteIcon}>♥</Text>
+                  </TouchableOpacity>
+
                   <View style={styles.itemInfo}>
                     <Text style={styles.itemTitle} numberOfLines={2}>
                       {item.title}
@@ -129,6 +192,12 @@ const SearchResultsScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: COLORS.background,
   },
   backgroundGreen: {
@@ -188,27 +257,10 @@ const styles = StyleSheet.create({
   placeholder: {
     width: 40,
   },
-  filterInfo: {
-    backgroundColor: COLORS.background,
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  filterLabel: {
-    fontSize: 12,
-    color: COLORS.darkText,
-    opacity: 0.7,
-    marginBottom: 4,
-  },
-  filterValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.darkText,
-  },
-  resultsCounter: {
+  counterContainer: {
     marginBottom: 20,
   },
-  resultsText: {
+  counterText: {
     fontSize: 14,
     color: COLORS.darkText,
     opacity: 0.8,
@@ -220,6 +272,7 @@ const styles = StyleSheet.create({
   },
   emptyIcon: {
     fontSize: 80,
+    color: COLORS.lightGray,
   },
   emptyTitle: {
     fontSize: 20,
@@ -236,13 +289,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     marginBottom: 24,
   },
-  newSearchButton: {
+  browseButton: {
     backgroundColor: COLORS.primary,
     paddingHorizontal: 32,
     paddingVertical: 12,
     borderRadius: 25,
   },
-  newSearchButtonText: {
+  browseButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: COLORS.darkText,
@@ -263,11 +316,32 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     overflow: 'hidden',
+    position: 'relative',
   },
   itemImage: {
     width: '100%',
     height: 140,
     backgroundColor: COLORS.lightGray,
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFE5E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  favoriteIcon: {
+    fontSize: 18,
+    color: '#FF4444',
   },
   itemInfo: {
     padding: 12,
@@ -310,4 +384,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SearchResultsScreen;
+export default FavoritesScreen;

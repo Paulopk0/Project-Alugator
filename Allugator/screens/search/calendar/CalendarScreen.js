@@ -42,18 +42,20 @@ const CalendarScreen = ({ navigation, route }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Background verde com header */}
+      {/* Background verde */}
       <View style={styles.background}>
         <View style={styles.headerContent}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backIcon}>←</Text>
-          </TouchableOpacity>
           <Text style={styles.headerTitle}>Calendário</Text>
         </View>
       </View>
+
+      {/* Botão de voltar (acima de tudo) */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backIcon}>←</Text>
+      </TouchableOpacity>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -140,11 +142,15 @@ const styles = StyleSheet.create({
     paddingTop: 15,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   backButton: {
-    marginRight: 15,
+    position: 'absolute',
+    top: 15,
+    left: 20,
+    zIndex: 999,
+    padding: 5,
   },
   backIcon: {
     fontSize: 28,

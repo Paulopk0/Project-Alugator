@@ -33,50 +33,19 @@ const HomeScreen = ({ navigation }) => {
             Alugue e empreste itens com facilidade
           </Text>
 
-          <View style={styles.buttonsContainer}>
-            {/* Botão Loja */}
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => navigation.navigate('Store')}
-            >
-              <Text style={styles.buttonIcon}>🏪</Text>
-              <Text style={styles.buttonTitle}>Loja</Text>
-              <Text style={styles.buttonDescription}>
-                Explore itens disponíveis para aluguel
-              </Text>
-            </TouchableOpacity>
+          <View style={styles.placeholderContainer}>
+            <Text style={styles.placeholderTitle}>Tela Home</Text>
+            <Text style={styles.placeholderText}>
+              Esta tela será implementada pelo colaborador.
+            </Text>
+            <Text style={styles.placeholderSubtext}>
+              Use a barra de navegação abaixo para acessar:
+            </Text>
+            </View>
 
-            {/* Botão Favoritos */}
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => navigation.navigate('Store', { 
-                screen: 'Favorites' 
-              })}
-            >
-              <Text style={styles.buttonIcon}>♥</Text>
-              <Text style={styles.buttonTitle}>Meus Favoritos</Text>
-              <Text style={styles.buttonDescription}>
-                Veja seus itens favoritos
-              </Text>
-            </TouchableOpacity>
-
-            {/* Botão Buscar */}
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => navigation.navigate('Store', { 
-                screen: 'Search' 
-              })}
-            >
-              <Text style={styles.buttonIcon}>🔍</Text>
-              <Text style={styles.buttonTitle}>Buscar</Text>
-              <Text style={styles.buttonDescription}>
-                Encontre o item perfeito
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </View>
-    </View>
   );
 };
 
@@ -127,38 +96,48 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 40,
   },
-  buttonsContainer: {
+  placeholderContainer: {
     flex: 1,
-    gap: 20,
-  },
-  button: {
-    backgroundColor: COLORS.background,
-    borderRadius: 20,
-    padding: 24,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
+    justifyContent: 'center',
+    paddingHorizontal: 20,
   },
-  buttonIcon: {
-    fontSize: 48,
-    marginBottom: 12,
+  placeholderIcon: {
+    fontSize: 72,
+    marginBottom: 20,
   },
-  buttonTitle: {
-    fontSize: 20,
+  placeholderTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.darkText,
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  buttonDescription: {
+  placeholderText: {
+    fontSize: 16,
+    color: COLORS.darkText,
+    textAlign: 'center',
+    marginBottom: 8,
+    opacity: 0.8,
+  },
+  placeholderSubtext: {
     fontSize: 14,
     color: COLORS.darkText,
-    opacity: 0.7,
     textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 16,
+    opacity: 0.6,
+  },
+  featuresContainer: {
+    backgroundColor: COLORS.background,
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    gap: 12,
+  },
+  featureItem: {
+    fontSize: 15,
+    color: COLORS.darkText,
+    paddingVertical: 8,
   },
 });
 

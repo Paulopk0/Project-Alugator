@@ -3,7 +3,7 @@ import AuthStorage from '../services/AuthStorage';
 const API_URL = 'http://localhost:3000/api';
 
 /**
- * Função para obter headers com token de autenticação
+ * Função para obter headers com token de autenticação aqui finaliza
  */
 const getAuthHeaders = async () => {
   const token = await AuthStorage.getToken();
@@ -104,19 +104,25 @@ const searchItems = async (filters) => {
   try {
     const headers = await getAuthHeaders();
     
-    // Construir query string com filtros
-    const params = new URLSearchParams();
-    if (filters.searchText) params.append('search', filters.searchText);
-    if (filters.category) params.append('category', filters.category);
-    if (filters.startDate) params.append('startDate', filters.startDate);
-    if (filters.timeFilter) params.append('timeFilter', filters.timeFilter);
+    console.log('🔍 Filtros de busca:', filters);
     
-    const response = await fetch(`${API_URL}/items?${params.toString()}`, {
+    // Construir query string com filtros baseados nos atributos do banco
+    const params = new URLSearchParams();
+    if (filters.title) params.append('title', filters.title);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.condition) params.append('condition', filters.condition);
+    if (filters.publishDate) params.append('publishDate', filters.publishDate);
+    
+    const url = `${API_URL}/items?${params.toString()}`;
+    console.log('📡 URL da busca:', url);
+    
+    const response = await fetch(url, {
       method: 'GET',
       headers,
     });
 
     const data = await response.json();
+    console.log('📥 Resultado da busca:', data);
 
     if (!response.ok) {
       throw new Error(data.message || 'Falha ao buscar items');
@@ -124,7 +130,7 @@ const searchItems = async (filters) => {
 
     return data;
   } catch (error) {
-    console.error('Erro ao buscar items:', error);
+    console.error('❌ Erro ao buscar items:', error);
     throw error;
   }
 };

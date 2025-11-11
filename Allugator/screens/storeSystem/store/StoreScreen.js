@@ -1,3 +1,15 @@
+/**
+ * StoreScreen - Tela principal da loja
+ * 
+ * Esta tela exibe todos os itens disponíveis para aluguel.
+ * Permite ao usuário:
+ * - Visualizar itens disponíveis
+ * - Favoritar itens
+ * - Navegar para detalhes do item
+ * - Buscar itens (via botão de pesquisa)
+ * - Adicionar novos itens (via botão FAB)
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -12,11 +24,13 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import { getAllItems } from '../../apis/ItemApi';
-import { getFavoriteIds, toggleFavorite } from '../../apis/FavoriteApi';
-import { getItemImage } from '../../assets/images/imageMap';
-import AuthStorage from '../../services/AuthStorage';
+import { getAllItems } from '../../../apis/ItemApi';
+import { getFavoriteIds, toggleFavorite } from '../../../apis/FavoriteApi';
+import { getItemImage } from '../../../assets/images/imageMap';
+import AuthStorage from '../../../services/AuthStorage';
+import { translateItemStatus } from '../../../utils/translationHelpers';
 
+// Paleta de cores do aplicativo
 const COLORS = {
   background: '#F0FFF0',
   primary: '#1DE9B6',
@@ -26,21 +40,31 @@ const COLORS = {
   shadow: '#00000026',
 };
 
+// Altura da tela para cálculos de layout
 const screenHeight = Dimensions.get('window').height;
 
 const StoreScreen = ({ navigation }) => {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [favorites, setFavorites] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
+  // ESTADOS DO COMPONENTE
+  const [items, setItems] = useState([]); // Lista de itens disponíveis
+  const [loading, setLoading] = useState(true); // Indicador de carregamento inicial
+  const [refreshing, setRefreshing] = useState(false); // Indicador de refresh (pull-to-refresh)
+  const [favorites, setFavorites] = useState([]); // IDs dos itens favoritados pelo usuário
+  const [currentUser, setCurrentUser] = useState(null); // Dados do usuário logado
 
+  /**
+   * Hook de efeito - Executa ao montar o componente
+   * Carrega dados iniciais: usuário, itens e favoritos
+   */
   useEffect(() => {
     loadUserData();
     loadItems();
     loadFavorites();
   }, []);
 
+  /**
+   * Carrega dados do usuário logado do AsyncStorage
+   * Usado para exibir nome do usuário no header
+   */
   const loadUserData = async () => {
     try {
       const user = await AuthStorage.getUser();
@@ -50,6 +74,10 @@ const StoreScreen = ({ navigation }) => {
     }
   };
 
+  /**
+   * Busca todos os itens disponíveis via API
+   * Atualiza o estado 'items' com a resposta
+   */
   const loadItems = async () => {
     try {
       setLoading(true);
@@ -64,6 +92,10 @@ const StoreScreen = ({ navigation }) => {
     }
   };
 
+  /**
+   * Busca IDs dos itens favoritados pelo usuário
+   * Usado para marcar corações como preenchidos
+   */
   const loadFavorites = async () => {
     try {
       const response = await getFavoriteIds();
@@ -75,6 +107,10 @@ const StoreScreen = ({ navigation }) => {
     }
   };
 
+  /**
+   * Recarrega itens e favoritos (pull-to-refresh)
+   * Chamado quando usuário arrasta a tela para baixo
+   */
   const handleRefresh = async () => {
     setRefreshing(true);
     await loadItems();
@@ -82,19 +118,30 @@ const StoreScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
+  /**
+   * Navega para tela de detalhes do item
+   * @param {Object} item - Item selecionado
+   */
   const handleItemPress = (item) => {
     navigation.navigate('ItemDetails', { item });
   };
 
+  /**
+   * Adiciona ou remove item dos favoritos
+   * @param {number} itemId - ID do item
+   * @param {boolean} isFavorite - Se já está favoritado
+   */
   const handleFavorite = async (itemId, isFavorite) => {
     try {
       const response = await toggleFavorite(itemId, isFavorite);
       
       if (response.status === 200 || response.status === 201) {
-        // Atualiza a lista local de favoritos
+        // Atualiza a lista local de favoritos otimisticamente
         if (isFavorite) {
+          // Remove dos favoritos
           setFavorites(prev => prev.filter(id => id !== itemId));
         } else {
+          // Adiciona aos favoritos
           setFavorites(prev => [...prev, itemId]);
         }
       }
@@ -133,7 +180,7 @@ const StoreScreen = ({ navigation }) => {
         <View style={styles.itemContent}>
           <View style={styles.itemHeader}>
             <Text style={styles.itemId}>ID: {item.id}</Text>
-            <Text style={styles.itemStatus}>{item.status}</Text>
+            <Text style={styles.itemStatus}>{translateItemStatus(item.status)}</Text>
           </View>
           
           <View style={styles.titleRow}>
@@ -255,7 +302,12 @@ const StoreScreen = ({ navigation }) => {
             </View>
           ) : (
             items.map((item) => (
-              <View key={item.id} style={styles.itemContainer}>
+              <TouchableOpacity 
+                key={item.id} 
+                style={styles.itemContainer}
+                onPress={() => handleItemPress(item)}
+                activeOpacity={0.7}
+              >
                 {/* Imagem do Item */}
                 {getItemImage(item.photos) && (
                   <Image 
@@ -293,7 +345,10 @@ const StoreScreen = ({ navigation }) => {
                       <Text style={styles.itemLocation}>📍 {item.location}</Text>
                       <TouchableOpacity 
                         style={[styles.favoriteButton, favorites.includes(item.id) && styles.favoriteButtonActive]}
-                        onPress={() => handleFavorite(item.id, favorites.includes(item.id))}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleFavorite(item.id, favorites.includes(item.id));
+                        }}
                       >
                         <Text style={[styles.favoriteIcon, favorites.includes(item.id) && styles.favoriteIconActive]}>
                           {favorites.includes(item.id) ? '♥' : '♡'}
@@ -302,11 +357,20 @@ const StoreScreen = ({ navigation }) => {
                     </View>
                   )}
                 </View>
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>
       </ScrollView>
+
+      {/* Botão Flutuante para Adicionar Item */}
+      <TouchableOpacity
+        style={styles.fabButton}
+        onPress={() => navigation.navigate('AddItem')}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.fabButtonText}>+</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -546,6 +610,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 40,
     lineHeight: 20,
+  },
+  fabButton: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  fabButtonText: {
+    fontSize: 32,
+    color: COLORS.white,
+    fontWeight: 'bold',
+    lineHeight: 32,
   },
 });
 
