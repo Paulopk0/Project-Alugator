@@ -5,8 +5,8 @@ const { authenticateToken } = require('../middlewares/authMiddleware');
 
 // Rotas públicas (não requerem autenticação)
 router.get('/items', itemController.getAllItems.bind(itemController));
-router.get('/items/:id', itemController.getItemById.bind(itemController));
 router.get('/items/category/:category', itemController.getItemsByCategory.bind(itemController));
+router.get('/items/:id', itemController.getItemById.bind(itemController));
 
 // Rotas protegidas (requerem autenticação)
 router.post('/items', authenticateToken, itemController.createItem.bind(itemController));

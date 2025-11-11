@@ -57,6 +57,13 @@ class ItemService {
             
             const params = [];
 
+            // Filtro de busca por texto (título ou descrição)
+            if (filters.searchText && filters.searchText.trim()) {
+                sql += ' AND (items.title LIKE ? OR items.description LIKE ?)';
+                const searchParam = `%${filters.searchText.trim()}%`;
+                params.push(searchParam, searchParam);
+            }
+
             // Filtros opcionais
             if (filters.category) {
                 sql += ' AND items.category = ?';
@@ -78,6 +85,16 @@ class ItemService {
                 params.push(`%${filters.location}%`);
             }
 
+            // Filtro de data - verifica se o item está disponível na data solicitada
+            // Nota: Isso requer uma tabela de agendamentos/reservas para funcionar corretamente
+            // Por enquanto, vamos apenas aceitar o parâmetro mas não filtrar
+            // TODO: Implementar verificação de disponibilidade por data quando houver tabela de reservas
+            
+            // Filtro de período do dia (timeFilter: 'Manhã', 'Tarde', 'Noite')
+            // Nota: Isso também requer dados de disponibilidade de horário nos itens
+            // Por enquanto, vamos apenas aceitar o parâmetro
+            // TODO: Implementar filtro de período quando houver campo de horários disponíveis
+
             sql += ' ORDER BY items.createdAt DESC';
 
             db.all(sql, params, (err, items) => {
@@ -91,44 +108,51 @@ class ItemService {
                 }
 
                 // Parse photos: se for JSON array válido faz parse, senão trata como string simples
-                const itemsWithPhotos = items.map(item => {
-                    let photos = [];
-                    if (item.photos) {
-                        try {
-                            // Tenta fazer parse como JSON
-                            photos = JSON.parse(item.photos);
-                        } catch (e) {
-                            // Se falhar, trata como string simples e retorna array com ela
-                            photos = [item.photos];
-                        }
-                    }
-                    return {
-                        ...item,
-                        photos
-                    };
-                });
+                const itemsWithPhotos = this._attachPhotosToItems(items);
 
                 resolve({
                     status: 200,
                     items: itemsWithPhotos
                 });
-            });
-        });
-    }
+                            });
+                        });
+                    }
 
-    /**
-     * Busca um item específico por ID
-     */
-    async getItemById(itemId) {
-        return new Promise((resolve, reject) => {
-            const sql = `SELECT 
-                items.*,
-                users.name as ownerName,
-                users.email as ownerEmail,
-                users.phoneNumber as ownerPhone
-                FROM items 
-                LEFT JOIN users ON items.ownerId = users.id
-                WHERE items.id = ?`;
+                    /**
+                     * Helper para parsear fotos de um item
+                     */
+                    _parsePhotos(photosData) {
+                        if (!photosData) return [];
+                        try {
+                            return JSON.parse(photosData);
+                        } catch (e) {
+                            return [photosData];
+                        }
+                    }
+
+                    /**
+                     * Helper para anexar fotos parseadas a itens
+                     */
+                    _attachPhotosToItems(items) {
+                        return items.map(item => ({
+                            ...item,
+                            photos: this._parsePhotos(item.photos)
+                        }));
+                    }
+
+                    /**
+                     * Busca um item específico por ID
+                     */
+                    async getItemById(itemId) {
+                        return new Promise((resolve, reject) => {
+                            const sql = `SELECT 
+                                items.*,
+                                users.name as ownerName,
+                                users.email as ownerEmail,
+                                users.phoneNumber as ownerPhone
+                                FROM items 
+                                LEFT JOIN users ON items.ownerId = users.id
+                                WHERE items.id = ?`;
 
             db.get(sql, [itemId], (err, item) => {
                 if (err) {

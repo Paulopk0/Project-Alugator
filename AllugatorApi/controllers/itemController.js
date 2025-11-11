@@ -45,10 +45,13 @@ class ItemController {
     async getAllItems(req, res) {
         try {
             const filters = {
+                searchText: req.query.searchText,
                 category: req.query.category,
                 minPrice: req.query.minPrice,
                 maxPrice: req.query.maxPrice,
-                location: req.query.location
+                location: req.query.location,
+                startDate: req.query.startDate,
+                timeFilter: req.query.timeFilter
             };
 
             const result = await itemService.getAllAvailableItems(filters);
