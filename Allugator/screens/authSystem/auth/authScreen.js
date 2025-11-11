@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View, Image, StatusBar, TouchableOpacity } from 'react-native';
-import CustomButton from '../../components/CustomButton/CustomButton';
+import CustomButton from '../../../components/CustomButton/CustomButton';
 
 // Cores do design
 const COLORS = {
