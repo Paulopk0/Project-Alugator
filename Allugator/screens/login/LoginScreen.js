@@ -47,7 +47,7 @@ const LoginScreen = ({ navigation }) => {
 
       
       setTimeout(() => {
-        navigation.replace('Store'); 
+        navigation.replace('Home'); 
       }, 1500);
 
     } catch (error) {

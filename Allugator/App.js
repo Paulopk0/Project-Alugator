@@ -13,6 +13,7 @@ import HomeScreen from './screens/home/HomeScreen';
 import StoreScreen from './screens/store/StoreScreen';
 import SearchScreen from './screens/search/SearchScreen';
 import SearchResultsScreen from './screens/searchResults/SearchResultsScreen';
+import FavoritesScreen from './screens/favorites/FavoritesScreen';
 import CalendarScreen from './screens/calendar/CalendarScreen';
 
 const Stack = createNativeStackNavigator();
@@ -62,6 +63,13 @@ function StoreNavigator() {
       <StoreStack.Screen 
         name="SearchResults" 
         component={SearchResultsScreen}
+        options={{
+          animation: 'slide_from_right'
+        }}
+      />
+      <StoreStack.Screen 
+        name="Favorites" 
+        component={FavoritesScreen}
         options={{
           animation: 'slide_from_right'
         }}

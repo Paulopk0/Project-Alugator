@@ -8,7 +8,7 @@ const COLORS = {
   white: '#FFFFFF',
 };
 
-const ItemCard = ({ item, onPress, onFavorite, onShare }) => {
+const ItemCard = ({ item, onPress, onFavorite, onShare, isFavorite = false }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={() => onPress(item)}>
       <Image 
@@ -29,10 +29,12 @@ const ItemCard = ({ item, onPress, onFavorite, onShare }) => {
 
       <View style={styles.actions}>
         <TouchableOpacity 
-          style={styles.iconButton}
-          onPress={() => onFavorite(item.id)}
+          style={[styles.iconButton, isFavorite && styles.iconButtonActive]}
+          onPress={() => onFavorite(item.id, isFavorite)}
         >
-          <Text style={styles.icon}>♡</Text>
+          <Text style={[styles.icon, isFavorite && styles.iconActive]}>
+            {isFavorite ? '♥' : '♡'}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity 
@@ -92,9 +94,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  iconButtonActive: {
+    backgroundColor: '#FFE5E5',
+  },
   icon: {
     fontSize: 18,
     color: COLORS.darkText,
+  },
+  iconActive: {
+    color: '#FF4444',
   },
 });
 

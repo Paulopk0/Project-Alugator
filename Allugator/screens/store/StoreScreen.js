@@ -13,6 +13,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { getAllItems } from '../../apis/ItemApi';
+import { getFavoriteIds, toggleFavorite } from '../../apis/FavoriteApi';
 import { getItemImage } from '../../assets/images/imageMap';
 import AuthStorage from '../../services/AuthStorage';
 
@@ -37,6 +38,7 @@ const StoreScreen = ({ navigation }) => {
   useEffect(() => {
     loadUserData();
     loadItems();
+    loadFavorites();
   }, []);
 
   const loadUserData = async () => {
@@ -62,9 +64,21 @@ const StoreScreen = ({ navigation }) => {
     }
   };
 
+  const loadFavorites = async () => {
+    try {
+      const response = await getFavoriteIds();
+      if (response.favoriteIds) {
+        setFavorites(response.favoriteIds);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar favoritos:', error);
+    }
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await loadItems();
+    await loadFavorites();
     setRefreshing(false);
   };
 
@@ -72,13 +86,22 @@ const StoreScreen = ({ navigation }) => {
     navigation.navigate('ItemDetails', { item });
   };
 
-  const handleFavorite = (itemId) => {
-    setFavorites(prev => {
-      if (prev.includes(itemId)) {
-        return prev.filter(id => id !== itemId);
+  const handleFavorite = async (itemId, isFavorite) => {
+    try {
+      const response = await toggleFavorite(itemId, isFavorite);
+      
+      if (response.status === 200 || response.status === 201) {
+        // Atualiza a lista local de favoritos
+        if (isFavorite) {
+          setFavorites(prev => prev.filter(id => id !== itemId));
+        } else {
+          setFavorites(prev => [...prev, itemId]);
+        }
       }
-      return [...prev, itemId];
-    });
+    } catch (error) {
+      console.error('Erro ao favoritar:', error);
+      Alert.alert('Erro', 'Não foi possível atualizar favorito');
+    }
   };
 
   const handleShare = async (item) => {
@@ -113,7 +136,19 @@ const StoreScreen = ({ navigation }) => {
             <Text style={styles.itemStatus}>{item.status}</Text>
           </View>
           
-          <Text style={styles.itemTitle}>{item.title}</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.itemTitle}>{item.title}</Text>
+            <View style={styles.actions}>
+              <TouchableOpacity 
+                style={[styles.iconButton, favorites.includes(item.id) && styles.iconButtonActive]}
+                onPress={() => handleFavorite(item.id, favorites.includes(item.id))}
+              >
+                <Text style={[styles.icon, favorites.includes(item.id) && styles.iconActive]}>
+                  {favorites.includes(item.id) ? '♥' : '♡'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           
           <View style={styles.itemInfo}>
             <Text style={styles.itemLabel}>Categoria:</Text>
@@ -254,7 +289,17 @@ const StoreScreen = ({ navigation }) => {
                   )}
                   
                   {item.location && (
-                    <Text style={styles.itemLocation}>📍 {item.location}</Text>
+                    <View style={styles.locationRow}>
+                      <Text style={styles.itemLocation}>📍 {item.location}</Text>
+                      <TouchableOpacity 
+                        style={[styles.favoriteButton, favorites.includes(item.id) && styles.favoriteButtonActive]}
+                        onPress={() => handleFavorite(item.id, favorites.includes(item.id))}
+                      >
+                        <Text style={[styles.favoriteIcon, favorites.includes(item.id) && styles.favoriteIconActive]}>
+                          {favorites.includes(item.id) ? '♥' : '♡'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </View>
               </View>
@@ -373,11 +418,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   itemTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.darkText,
     flex: 1,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconButtonActive: {
+    backgroundColor: '#FFE5E5',
+  },
+  icon: {
+    fontSize: 18,
+    color: COLORS.darkText,
+  },
+  iconActive: {
+    color: '#FF4444',
   },
   itemStatus: {
     fontSize: 11,
@@ -419,10 +492,39 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 10,
   },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
   itemLocation: {
     fontSize: 13,
     color: '#888',
     fontWeight: '500',
+    flex: 1,
+  },
+  favoriteButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+    marginLeft: 12,
+  },
+  favoriteButtonActive: {
+    backgroundColor: '#FFE5E5',
+    borderColor: '#FF4444',
+  },
+  favoriteIcon: {
+    fontSize: 24,
+    color: COLORS.darkText,
+  },
+  favoriteIconActive: {
+    color: '#FF4444',
   },
   emptyContainer: {
     alignItems: 'center',
