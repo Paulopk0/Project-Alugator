@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import CustomButton from '../../components/CustomButton/CustomButton';
-import CustomTextInput from '../../components/CustomTextInput/CustomTextInput';
-import { register } from '../../apis/AuthApi';
-import MessageDisplay from '../../components/MessageDisplay/MessageDisplay';
+import CustomButton from '../../../components/CustomButton/CustomButton';
+import CustomTextInput from '../../../components/CustomTextInput/CustomTextInput';
+import { register } from '../../../apis/AuthApi';
+import MessageDisplay from '../../../components/MessageDisplay/MessageDisplay';
 
 const COLORS = {
   background: '#F0FFF0', 

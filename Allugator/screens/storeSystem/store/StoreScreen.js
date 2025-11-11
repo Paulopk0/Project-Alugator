@@ -1,0 +1,641 @@
+/**
+ * StoreScreen - Tela principal da loja
+ * 
+ * Esta tela exibe todos os itens disponíveis para aluguel.
+ * Permite ao usuário:
+ * - Visualizar itens disponíveis
+ * - Favoritar itens
+ * - Navegar para detalhes do item
+ * - Buscar itens (via botão de pesquisa)
+ * - Adicionar novos itens (via botão FAB)
+ */
+
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  StatusBar,
+  ActivityIndicator,
+  Alert,
+  Image,
+  Dimensions,
+  ScrollView,
+} from 'react-native';
+import { getAllItems } from '../../../apis/ItemApi';
+import { getFavoriteIds, toggleFavorite } from '../../../apis/FavoriteApi';
+import { getItemImage } from '../../../assets/images/imageMap';
+import AuthStorage from '../../../services/AuthStorage';
+import { translateItemStatus } from '../../../utils/translationHelpers';
+
+// Paleta de cores do aplicativo
+const COLORS = {
+  background: '#F0FFF0',
+  primary: '#1DE9B6',
+  darkText: '#444444ff',
+  white: '#FFFFFF',
+  lightGray: '#E0E0E0',
+  shadow: '#00000026',
+};
+
+// Altura da tela para cálculos de layout
+const screenHeight = Dimensions.get('window').height;
+
+const StoreScreen = ({ navigation }) => {
+  // ESTADOS DO COMPONENTE
+  const [items, setItems] = useState([]); // Lista de itens disponíveis
+  const [loading, setLoading] = useState(true); // Indicador de carregamento inicial
+  const [refreshing, setRefreshing] = useState(false); // Indicador de refresh (pull-to-refresh)
+  const [favorites, setFavorites] = useState([]); // IDs dos itens favoritados pelo usuário
+  const [currentUser, setCurrentUser] = useState(null); // Dados do usuário logado
+
+  /**
+   * Hook de efeito - Executa ao montar o componente
+   * Carrega dados iniciais: usuário, itens e favoritos
+   */
+  useEffect(() => {
+    loadUserData();
+    loadItems();
+    loadFavorites();
+  }, []);
+
+  /**
+   * Carrega dados do usuário logado do AsyncStorage
+   * Usado para exibir nome do usuário no header
+   */
+  const loadUserData = async () => {
+    try {
+      const user = await AuthStorage.getUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.error('Erro ao carregar usuário:', error);
+    }
+  };
+
+  /**
+   * Busca todos os itens disponíveis via API
+   * Atualiza o estado 'items' com a resposta
+   */
+  const loadItems = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllItems();
+      
+      setItems(response.items);
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível carregar os items: ' + error.message);
+      console.error('❌ Erro completo:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Busca IDs dos itens favoritados pelo usuário
+   * Usado para marcar corações como preenchidos
+   */
+  const loadFavorites = async () => {
+    try {
+      const response = await getFavoriteIds();
+      if (response.favoriteIds) {
+        setFavorites(response.favoriteIds);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar favoritos:', error);
+    }
+  };
+
+  /**
+   * Recarrega itens e favoritos (pull-to-refresh)
+   * Chamado quando usuário arrasta a tela para baixo
+   */
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadItems();
+    await loadFavorites();
+    setRefreshing(false);
+  };
+
+  /**
+   * Navega para tela de detalhes do item
+   * @param {Object} item - Item selecionado
+   */
+  const handleItemPress = (item) => {
+    navigation.navigate('ItemDetails', { item });
+  };
+
+  /**
+   * Adiciona ou remove item dos favoritos
+   * @param {number} itemId - ID do item
+   * @param {boolean} isFavorite - Se já está favoritado
+   */
+  const handleFavorite = async (itemId, isFavorite) => {
+    try {
+      const response = await toggleFavorite(itemId, isFavorite);
+      
+      if (response.status === 200 || response.status === 201) {
+        // Atualiza a lista local de favoritos otimisticamente
+        if (isFavorite) {
+          // Remove dos favoritos
+          setFavorites(prev => prev.filter(id => id !== itemId));
+        } else {
+          // Adiciona aos favoritos
+          setFavorites(prev => [...prev, itemId]);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao favoritar:', error);
+      Alert.alert('Erro', 'Não foi possível atualizar favorito');
+    }
+  };
+
+  const handleShare = async (item) => {
+    try {
+      await Share.share({
+        message: `Confira este item: ${item.title} por R$${item.priceDaily.toFixed(2)}/dia`,
+        title: item.title,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const renderItem = ({ item }) => {
+    // Busca a imagem usando o nome da foto (string) que vem da API
+    const itemImage = getItemImage(item.photos);
+    
+    return (
+      <View style={styles.itemContainer}>
+        {/* Imagem do Item */}
+        {itemImage && (
+          <Image 
+            source={itemImage} 
+            style={styles.itemImage}
+            resizeMode="cover"
+          />
+        )}
+        
+        <View style={styles.itemContent}>
+          <View style={styles.itemHeader}>
+            <Text style={styles.itemId}>ID: {item.id}</Text>
+            <Text style={styles.itemStatus}>{translateItemStatus(item.status)}</Text>
+          </View>
+          
+          <View style={styles.titleRow}>
+            <Text style={styles.itemTitle}>{item.title}</Text>
+            <View style={styles.actions}>
+              <TouchableOpacity 
+                style={[styles.iconButton, favorites.includes(item.id) && styles.iconButtonActive]}
+                onPress={() => handleFavorite(item.id, favorites.includes(item.id))}
+              >
+                <Text style={[styles.icon, favorites.includes(item.id) && styles.iconActive]}>
+                  {favorites.includes(item.id) ? '♥' : '♡'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemLabel}>Categoria:</Text>
+            <Text style={styles.itemValue}>{item.category}</Text>
+          </View>
+          
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemLabel}>Preço/Dia:</Text>
+            <Text style={styles.itemPrice}>R$ {item.priceDaily?.toFixed(2)}</Text>
+          </View>
+          
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemLabel}>Condição:</Text>
+            <Text style={styles.itemValue}>{item.condition}</Text>
+          </View>
+          
+          {item.description && (
+            <View style={styles.itemInfo}>
+              <Text style={styles.itemLabel}>Descrição:</Text>
+              <Text style={styles.itemDescription}>{item.description}</Text>
+            </View>
+          )}
+          
+          {item.location && (
+            <View style={styles.itemInfo}>
+              <Text style={styles.itemLabel}>Localização:</Text>
+              <Text style={styles.itemValue}>{item.location}</Text>
+            </View>
+          )}
+          
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemLabel}>Foto:</Text>
+            <Text style={styles.itemValue}>{item.photos || 'default'}</Text>
+          </View>
+          
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemLabel}>Data Publicação:</Text>
+            <Text style={styles.itemValue}>
+              {item.publishDate ? new Date(item.publishDate).toLocaleDateString('pt-BR') : 'N/A'}
+            </Text>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Background verde com header */}
+      <View style={styles.background}>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>Loja</Text>
+            {currentUser && (
+              <Text style={styles.headerSubtitle}>Olá, {currentUser.name}</Text>
+            )}
+          </View>
+        </View>
+      </View>
+
+      {/* Botão de pesquisa separado (acima de tudo) */}
+      <TouchableOpacity
+        style={styles.searchButton}
+        onPress={() => navigation.navigate('Search')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.searchIcon}>🔍</Text>
+      </TouchableOpacity>
+
+      {/* Card branco com conteúdo */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContainer}
+      >
+        <View style={styles.contentCard}>
+          {/* Info bar */}
+          <View style={styles.infoBar}>
+            <Text style={styles.infoText}>
+              📦 {items.length} {items.length === 1 ? 'item disponível' : 'itens disponíveis'}
+            </Text>
+            <TouchableOpacity onPress={handleRefresh}>
+              <Text style={styles.refreshText}>🔄 Atualizar</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Lista de Items */}
+          {items.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>📭</Text>
+              <Text style={styles.emptyTitle}>Nenhum item encontrado</Text>
+              <Text style={styles.emptySubtitle}>
+                Execute o seeder para adicionar items de exemplo
+              </Text>
+            </View>
+          ) : (
+            items.map((item) => (
+              <TouchableOpacity 
+                key={item.id} 
+                style={styles.itemContainer}
+                onPress={() => handleItemPress(item)}
+                activeOpacity={0.7}
+              >
+                {/* Imagem do Item */}
+                {getItemImage(item.photos) && (
+                  <Image 
+                    source={getItemImage(item.photos)} 
+                    style={styles.itemImage}
+                    resizeMode="cover"
+                  />
+                )}
+                
+                <View style={styles.itemContent}>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemTitle}>{item.title}</Text>
+                    <Text style={styles.itemStatus}>{item.status}</Text>
+                  </View>
+                  
+                  <Text style={styles.itemPrice}>R$ {item.priceDaily?.toFixed(2)}/dia</Text>
+                  
+                  <View style={styles.itemDetails}>
+                    <View style={styles.itemBadge}>
+                      <Text style={styles.itemBadgeText}>{item.category}</Text>
+                    </View>
+                    <View style={styles.itemBadge}>
+                      <Text style={styles.itemBadgeText}>{item.condition}</Text>
+                    </View>
+                  </View>
+                  
+                  {item.description && (
+                    <Text style={styles.itemDescription} numberOfLines={2}>
+                      {item.description}
+                    </Text>
+                  )}
+                  
+                  {item.location && (
+                    <View style={styles.locationRow}>
+                      <Text style={styles.itemLocation}>📍 {item.location}</Text>
+                      <TouchableOpacity 
+                        style={[styles.favoriteButton, favorites.includes(item.id) && styles.favoriteButtonActive]}
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleFavorite(item.id, favorites.includes(item.id));
+                        }}
+                      >
+                        <Text style={[styles.favoriteIcon, favorites.includes(item.id) && styles.favoriteIconActive]}>
+                          {favorites.includes(item.id) ? '♥' : '♡'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Botão Flutuante para Adicionar Item */}
+      <TouchableOpacity
+        style={styles.fabButton}
+        onPress={() => navigation.navigate('AddItem')}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.fabButtonText}>+</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  background: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: COLORS.primary,
+    paddingTop: screenHeight * 0.02,
+    paddingHorizontal: 20,
+    zIndex: 0,
+  },
+  headerContent: {
+    paddingTop: 10,
+  },
+  headerTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: COLORS.darkText,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: COLORS.darkText,
+    marginTop: 4,
+    opacity: 0.8,
+  },
+  searchButton: {
+    position: 'absolute',
+    top: screenHeight * 0.05,
+    right: 20,
+    width: 45,
+    height: 45,
+    borderRadius: 23,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 5,
+    zIndex: 999,
+  },
+  searchIcon: {
+    fontSize: 20,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingTop: screenHeight * 0.18,
+  },
+  contentCard: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 60,
+    borderTopRightRadius: 60,
+    paddingTop: 30,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  infoBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  infoText: {
+    fontSize: 15,
+    color: COLORS.darkText,
+    fontWeight: '600',
+  },
+  refreshText: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  itemContainer: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    marginBottom: 20,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  itemImage: {
+    width: '100%',
+    height: 220,
+  },
+  itemContent: {
+    padding: 20,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  itemTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.darkText,
+    flex: 1,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconButtonActive: {
+    backgroundColor: '#FFE5E5',
+  },
+  icon: {
+    fontSize: 18,
+    color: COLORS.darkText,
+  },
+  iconActive: {
+    color: '#FF4444',
+  },
+  itemStatus: {
+    fontSize: 11,
+    color: COLORS.primary,
+    fontWeight: '700',
+    backgroundColor: '#E8F9F5',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    textTransform: 'uppercase',
+  },
+  itemPrice: {
+    fontSize: 24,
+    color: COLORS.primary,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  itemDetails: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  itemBadge: {
+    backgroundColor: COLORS.background,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+    marginRight: 8,
+  },
+  itemBadgeText: {
+    fontSize: 12,
+    color: COLORS.darkText,
+    fontWeight: '600',
+  },
+  itemDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 10,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  itemLocation: {
+    fontSize: 13,
+    color: '#888',
+    fontWeight: '500',
+    flex: 1,
+  },
+  favoriteButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+    marginLeft: 12,
+  },
+  favoriteButtonActive: {
+    backgroundColor: '#FFE5E5',
+    borderColor: '#FF4444',
+  },
+  favoriteIcon: {
+    fontSize: 24,
+    color: COLORS.darkText,
+  },
+  favoriteIconActive: {
+    color: '#FF4444',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 80,
+  },
+  emptyText: {
+    fontSize: 60,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.darkText,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+    lineHeight: 20,
+  },
+  fabButton: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  fabButtonText: {
+    fontSize: 32,
+    color: COLORS.white,
+    fontWeight: 'bold',
+    lineHeight: 32,
+  },
+});
+
+export default StoreScreen;

@@ -21,7 +21,7 @@ export default StyleSheet.create({
     boxShadowColor: '#000',
     boxShadowOffset: { width: 0, height: 2 },
     boxShadowOpacity: 0.25,
-    noxShadowRadius: 3.84,
+    boxShadowRadius: 3.84,
     elevation: 5,
   },
   buttonText: {

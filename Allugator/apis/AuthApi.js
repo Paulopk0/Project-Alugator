@@ -1,6 +1,5 @@
 import AuthStorage from '../services/AuthStorage';
-const API_URL = 'http://localhost:3000';
-
+const API_URL = 'http://localhost:3000/api';
 
 /**
  * Função para obter headers com token de autenticação
@@ -20,33 +19,21 @@ const getAuthHeaders = async () => {
  * @returns {Promise<Object>} Dados do usuário logado
  */
 const login = async (email, password) => {
-  console.log('--- Iniciando Tentativa de Login ---');
-  console.log('Email recebido:', email);
-  // Não vamos logar a senha por segurança, mas sabemos que ela foi recebida.
-
   try {
-    const requestBody = JSON.stringify({ email, password });
-    console.log('Enviando para API (login):', requestBody);
-
     const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: requestBody,
+      body: JSON.stringify({ email, password }),
     });
 
-    console.log('Resposta da API recebida. Status:', response.status);
-
     const data = await response.json();
-    console.log('Dados da resposta (login):', data);
 
     if (!response.ok) {
-      console.error('Resposta da API não foi "ok". Mensagem:', data.message);
       throw new Error(data.message || 'Falha no login');
     }
 
-    console.log('Login bem-sucedido!');
     return data;
   } catch (error) {
     // Este console.error já existia, mas é muito importante.
@@ -65,32 +52,21 @@ const login = async (email, password) => {
  * @returns {Promise<Object>} Dados do usuário registrado
  */
 const register = async (userData) => {
-  console.log('--- Iniciando Tentativa de Registro ---');
-  console.log('Dados de usuário recebidos:', userData);
-
   try {
-    const requestBody = JSON.stringify(userData);
-    console.log('Enviando para API (registro):', requestBody);
-
     const response = await fetch(`${API_URL}/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: requestBody,
+      body: JSON.stringify(userData),
     });
 
-    console.log('Resposta da API recebida. Status:', response.status);
-
     const data = await response.json();
-    console.log('Dados da resposta (registro):', data);
 
     if (!response.ok) {
-      console.error('Resposta da API não foi "ok". Mensagem:', data.message);
       throw new Error(data.message || 'Falha no registro');
     }
 
-    console.log('Registro bem-sucedido!');
     return data;
   } catch (error) {
     // Este console.error já existia.

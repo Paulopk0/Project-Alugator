@@ -16,8 +16,9 @@ const authenticateToken = (req, res, next) => {
             });
         }
 
-        // Verifica o token
-        jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        // Verifica o token (usa fallback para desenvolvimento se JWT_SECRET não estiver definido)
+        const jwtSecret = process.env.JWT_SECRET;
+        jwt.verify(token, jwtSecret, (err, user) => {
             if (err) {
                 return res.status(403).json({
                     status: 403,

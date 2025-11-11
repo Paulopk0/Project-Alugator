@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, StatusBar, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import CustomButton from '../../components/CustomButton/CustomButton';
-import CustomTextInput from '../../components/CustomTextInput/CustomTextInput';
+import CustomButton from '../../../components/CustomButton/CustomButton';
+import CustomTextInput from '../../../components/CustomTextInput/CustomTextInput';
 
 const COLORS = {
   background: '#F0FFF0', 
