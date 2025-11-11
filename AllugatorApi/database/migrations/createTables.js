@@ -83,6 +83,29 @@ const createTables = async () => {
             });
         });
 
+        // Favorites Table (favoritos)
+        await new Promise((resolve, reject) => {
+            db.run(`
+                CREATE TABLE IF NOT EXISTS favorites (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    userId INTEGER NOT NULL,
+                    itemId INTEGER NOT NULL,
+                    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
+                    FOREIGN KEY (itemId) REFERENCES items(id) ON DELETE CASCADE,
+                    UNIQUE(userId, itemId)
+                )
+            `, (err) => {
+                if (err) {
+                    console.error('❌ Erro ao criar tabela favorites:', err);
+                    reject(err);
+                } else {
+                    console.log('✅ Tabela favorites criada');
+                    resolve();
+                }
+            });
+        });
+
         // Reviews Table (avaliações)
         await new Promise((resolve, reject) => {
             db.run(`
