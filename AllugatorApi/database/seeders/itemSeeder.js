@@ -15,7 +15,7 @@ const items = [
         condition: 'Excelente',
         photos: 'parafusadeira', // Nome do asset 
         location: 'São Paulo, SP',
-        status: 'Disponível',
+        status: 'available',
         securityDeposit: 50.00
     },
     {
@@ -27,7 +27,7 @@ const items = [
         condition: 'Bom',
         photos: 'guarda_roupa',
         location: 'Rio de Janeiro, RJ',
-        status: 'Disponível',
+        status: 'available',
         securityDeposit: 100.00
     },
     {
@@ -39,7 +39,7 @@ const items = [
         condition: 'Excelente',
         photos: 'furadeira',
         location: 'São Paulo, SP',
-        status: 'Disponível',
+        status: 'available',
         securityDeposit: 80.00
     },
     {
@@ -51,7 +51,7 @@ const items = [
         condition: 'Bom',
         photos: 'mesa_escritorio',
         location: 'Belo Horizonte, MG',
-        status: 'Disponível',
+        status: 'available',
         securityDeposit: 60.00
     },
     {
@@ -63,7 +63,7 @@ const items = [
         condition: 'Bom',
         photos: 'escada',
         location: 'Curitiba, PR',
-        status: 'Disponível',
+        status: 'available',
         securityDeposit: 40.00
     },
     {
@@ -75,7 +75,7 @@ const items = [
         condition: 'Excelente',
         photos: 'bicicleta',
         location: 'Florianópolis, SC',
-        status: 'Disponível',
+        status: 'available',
         securityDeposit: 150.00
     },
     {
@@ -87,7 +87,7 @@ const items = [
         condition: 'Excelente',
         photos: 'barraca',
         location: 'Brasília, DF',
-        status: 'Disponível',
+        status: 'available',
         securityDeposit: 80.00
     }
 ];

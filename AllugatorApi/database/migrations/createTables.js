@@ -38,7 +38,7 @@ const createTables = async () => {
                     photos TEXT,
                     publishDate DATETIME DEFAULT CURRENT_TIMESTAMP,
                     location TEXT,
-                    status TEXT DEFAULT 'Disponível',
+                    status TEXT DEFAULT 'available',
                     securityDeposit REAL DEFAULT 0,
                     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -50,34 +50,6 @@ const createTables = async () => {
                     reject(err);
                 } else {
                     console.log('✅ Tabela items criada');
-                    resolve();
-                }
-            });
-        });
-
-        // Rentals Table (histórico de aluguéis)
-        await new Promise((resolve, reject) => {
-            db.run(`
-                CREATE TABLE IF NOT EXISTS rentals (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    itemId INTEGER NOT NULL,
-                    renterId INTEGER NOT NULL,
-                    startDate DATETIME NOT NULL,
-                    endDate DATETIME NOT NULL,
-                    totalPrice REAL NOT NULL,
-                    status TEXT DEFAULT 'Pendente',
-                    paymentStatus TEXT DEFAULT 'Aguardando',
-                    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (itemId) REFERENCES items(id) ON DELETE CASCADE,
-                    FOREIGN KEY (renterId) REFERENCES users(id) ON DELETE CASCADE
-                )
-            `, (err) => {
-                if (err) {
-                    console.error('❌ Erro ao criar tabela rentals:', err);
-                    reject(err);
-                } else {
-                    console.log('✅ Tabela rentals criada');
                     resolve();
                 }
             });
@@ -106,25 +78,31 @@ const createTables = async () => {
             });
         });
 
-        // Reviews Table (avaliações)
+        // Rentals Table (aluguéis/reservas)
         await new Promise((resolve, reject) => {
             db.run(`
-                CREATE TABLE IF NOT EXISTS reviews (
+                CREATE TABLE IF NOT EXISTS rentals (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     itemId INTEGER NOT NULL,
-                    userId INTEGER NOT NULL,
-                    rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
-                    comment TEXT,
+                    renterId INTEGER NOT NULL,
+                    startDate DATETIME NOT NULL,
+                    endDate DATETIME NOT NULL,
+                    days INTEGER NOT NULL,
+                    pricePerDay REAL NOT NULL,
+                    totalPrice REAL NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    paymentStatus TEXT DEFAULT 'pending',
                     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (itemId) REFERENCES items(id) ON DELETE CASCADE,
-                    FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+                    FOREIGN KEY (renterId) REFERENCES users(id) ON DELETE CASCADE
                 )
             `, (err) => {
                 if (err) {
-                    console.error('❌ Erro ao criar tabela reviews:', err);
+                    console.error('❌ Erro ao criar tabela rentals:', err);
                     reject(err);
                 } else {
-                    console.log('✅ Tabela reviews criada');
+                    console.log('✅ Tabela rentals criada');
                     resolve();
                 }
             });

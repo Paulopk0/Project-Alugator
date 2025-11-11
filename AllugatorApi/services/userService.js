@@ -2,9 +2,59 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../database/config/database.js');
 
+/**
+ * UserService
+ * 
+ * Service responsável pela lógica de negócio de usuários e autenticação.
+ * Gerencia cadastro, login, consultas de usuários e geração de tokens JWT.
+ * 
+ * Funcionalidades:
+ * - Registro de novos usuários (com hash de senha)
+ * - Autenticação/Login (com verificação bcrypt)
+ * - Geração de tokens JWT (validade 7 dias)
+ * - Listagem de usuários
+ * - Busca de usuário por ID
+ * 
+ * Segurança:
+ * - Senhas hasheadas com bcrypt (salt rounds = 10)
+ * - JWT com expiração configurável
+ * - Senhas NUNCA retornadas em consultas
+ * - Validação de email único (constraint UNIQUE no banco)
+ * 
+ * Estrutura do banco (tabela users):
+ * - id: INTEGER PRIMARY KEY
+ * - name: TEXT NOT NULL
+ * - email: TEXT UNIQUE NOT NULL
+ * - password: TEXT NOT NULL (hash bcrypt)
+ * - phoneNumber: TEXT
+ * - createdAt: DATETIME DEFAULT CURRENT_TIMESTAMP
+ */
 class UserService {
     /**
-     * Gera um token JWT para o usuário
+     * generateToken - Gera um token JWT para autenticação do usuário
+     * 
+     * O token contém informações básicas do usuário no payload (id, email, name)
+     * e tem validade configurável (padrão: 7 dias).
+     * 
+     * O token é usado pelo frontend para autenticar requisições subsequentes,
+     * sendo enviado no header Authorization: Bearer {token}
+     * 
+     * Payload do token:
+     * - id: ID do usuário
+     * - email: Email do usuário
+     * - name: Nome do usuário
+     * - iat: Timestamp de criação
+     * - exp: Timestamp de expiração
+     * 
+     * @param {Object} user - Objeto do usuário com id, email e name
+     * @returns {string} Token JWT assinado
+     * 
+     * @note Secret Key vem de process.env.JWT_SECRET
+     * @note Validade padrão: 7 dias (JWT_EXPIRES_IN ou '7d')
+     * 
+     * @example
+     * const token = generateToken({ id: 1, email: 'user@email.com', name: 'João' });
+     * // Retorna: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
      */
     generateToken(user) {
         return jwt.sign(
@@ -17,6 +67,40 @@ class UserService {
             { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
         );
     }
+
+    /**
+     * register - Registra um novo usuário no sistema
+     * 
+     * Fluxo de registro:
+     * 1. Gera hash seguro da senha usando bcrypt (salt rounds = 10)
+     * 2. Insere usuário no banco com senha hasheada
+     * 3. Retorna ID do usuário criado
+     * 
+     * Validações:
+     * - Email deve ser único (constraint UNIQUE no banco)
+     * - Todos os campos obrigatórios devem ser preenchidos
+     * 
+     * Segurança:
+     * - Senha NUNCA armazenada em texto plano
+     * - Hash bcrypt com 10 rounds (recomendado)
+     * - Salt gerado automaticamente por round
+     * 
+     * @param {string} name - Nome completo do usuário
+     * @param {string} email - Email (usado para login)
+     * @param {string} phoneNumber - Telefone de contato
+     * @param {string} password - Senha em texto plano (será hasheada)
+     * @returns {Promise<Object>} Objeto com status 201 e userId
+     * 
+     * @throws {Object} Status 400 se email já existe (SQLITE_CONSTRAINT)
+     * @throws {Object} Status 400 em caso de erro ao salvar
+     * 
+     * @note Hash bcrypt: $2a$10$... (60 caracteres)
+     * @note Salt rounds = 10: ~10 hashes por segundo (seguro e rápido)
+     * 
+     * @example
+     * register('João Silva', 'joao@email.com', '(11) 99999-9999', 'senha123')
+     * // Retorna: { status: 201, message: 'Usuário cadastrado com sucesso!', userId: 1 }
+     */
     async register(name, email, phoneNumber, password) {
         try {
             const salt = bcrypt.genSaltSync(10);
@@ -50,6 +134,40 @@ class UserService {
         }
     }
 
+    /**
+     * login - Autentica usuário e gera token JWT
+     * 
+     * Fluxo de login:
+     * 1. Busca usuário por email no banco
+     * 2. Verifica se usuário existe
+     * 3. Compara senha fornecida com hash do banco usando bcrypt.compareSync()
+     * 4. Se válido: gera token JWT e retorna dados do usuário (SEM senha)
+     * 
+     * Segurança:
+     * - Comparação segura com bcrypt (compara hash, não texto plano)
+     * - Senha NUNCA retornada na resposta
+     * - Token JWT com expiração
+     * 
+     * @param {string} email - Email do usuário
+     * @param {string} password - Senha em texto plano
+     * @returns {Promise<Object>} Objeto com status 200, token JWT e dados do usuário
+     * 
+     * @throws {Object} Status 404 se usuário não encontrado
+     * @throws {Object} Status 401 se senha incorreta
+     * @throws {Object} Status 500 em caso de erro interno
+     * 
+     * @note bcrypt.compareSync() é seguro contra timing attacks
+     * @note Token deve ser armazenado pelo frontend (AsyncStorage)
+     * 
+     * @example
+     * login('joao@email.com', 'senha123')
+     * // Retorna: {
+     * //   status: 200,
+     * //   message: 'Login realizado com sucesso!',
+     * //   token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+     * //   user: { id: 1, name: 'João Silva', email: 'joao@email.com' }
+     * // }
+     */
     async login(email, password) {
         try {
             return new Promise((resolve, reject) => {
@@ -95,6 +213,35 @@ class UserService {
         }
     }
 
+    /**
+     * getAll - Lista todos os usuários cadastrados no sistema
+     * 
+     * Retorna lista de TODOS os usuários, mas SEM o campo 'password' por segurança.
+     * Útil para:
+     * - Listagem de usuários no painel admin
+     * - Busca de proprietários de itens
+     * - Estatísticas do sistema
+     * 
+     * SQL: SELECT id, name, email, phoneNumber FROM users
+     * (Senha NÃO incluída no SELECT)
+     * 
+     * @returns {Promise<Object>} Objeto com status 200 e array de usuários
+     * 
+     * @throws {Object} Status 500 em caso de erro ao buscar
+     * 
+     * @note Senha NUNCA retornada por segurança
+     * @note Sem paginação (retorna todos) - considerar adicionar em versão futura
+     * 
+     * @example
+     * getAll()
+     * // Retorna: {
+     * //   status: 200,
+     * //   users: [
+     * //     { id: 1, name: 'João Silva', email: 'joao@email.com', phoneNumber: '(11) 99999-9999' },
+     * //     { id: 2, name: 'Maria Santos', email: 'maria@email.com', phoneNumber: '(11) 88888-8888' }
+     * //   ]
+     * // }
+     */
     async getAll() {
         try {
             return new Promise((resolve, reject) => {

@@ -1,15 +1,49 @@
+/**
+ * ItemService - Camada de serviço para itens
+ * 
+ * Contém toda a lógica de negócio relacionada a itens:
+ * - Validações de dados
+ * - Interações com banco de dados SQLite
+ * - Transformação de dados (parse de fotos, etc.)
+ * - Aplicação de filtros de busca
+ * 
+ * Esta camada isola a lógica de negócio dos controllers,
+ * facilitando manutenção e testes.
+ */
+
 const db = require('../database/config/database.js');
 
 class ItemService {
     /**
-     * Cria um novo item para aluguel
+     * Cria um novo item para aluguel no banco de dados
+     * 
+     * @param {Object} itemData - Dados do item
+     * @param {number} itemData.ownerId - ID do proprietário (usuário logado)
+     * @param {string} itemData.title - Título do item
+     * @param {number} itemData.priceDaily - Preço por dia
+     * @param {string} itemData.description - Descrição detalhada
+     * @param {string} itemData.category - Categoria (ex: 'Ferramentas')
+     * @param {string} itemData.condition - Condição (ex: 'Excelente', 'Bom')
+     * @param {string} itemData.photos - Nome da foto ou JSON array
+     * @param {string} itemData.location - Localização
+     * @param {number} itemData.securityDeposit - Caução (padrão: 0)
+     * 
+     * @returns {Promise<Object>} Resultado com status e ID do item criado
+     * 
+     * @note Item é criado automaticamente com status 'available'
+     * @note publishDate é preenchido automaticamente (CURRENT_TIMESTAMP)
      */
     async createItem(itemData) {
         return new Promise((resolve, reject) => {
+            console.log('📦 Criando item com dados:', itemData);
+            
+            // Query SQL para inserção
+            // publishDate e createdAt são preenchidos automaticamente pelo banco
             const sql = `INSERT INTO items 
                 (ownerId, title, priceDaily, description, category, condition, photos, location, status, securityDeposit) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
             
+            // Monta array de parâmetros na ordem dos ?
             const params = [
                 itemData.ownerId,
                 itemData.title,
@@ -17,15 +51,19 @@ class ItemService {
                 itemData.description,
                 itemData.category,
                 itemData.condition,
-                JSON.stringify(itemData.photos || []),
+                itemData.photos || 'default', // 'default' se não fornecido
                 itemData.location,
-                itemData.status || 'Disponível',
-                itemData.securityDeposit || 0
+                'available',                   // Status padrão ao criar
+                itemData.securityDeposit || 0  // 0 se não fornecido
             ];
 
+            console.log('📝 SQL INSERT:', sql);
+            console.log('📌 Params:', params);
+
+            // Executa INSERT no banco
             db.run(sql, params, function(err) {
                 if (err) {
-                    console.error('Erro ao criar item:', err);
+                    console.error('❌ Erro ao criar item:', err);
                     reject({
                         status: 500,
                         message: 'Erro ao criar item'
@@ -33,43 +71,95 @@ class ItemService {
                     return;
                 }
                 
+                console.log('✅ Item criado com ID:', this.lastID);
+                
+                // Retorna sucesso com ID do item criado
                 resolve({
                     status: 201,
                     message: 'Item criado com sucesso!',
-                    itemId: this.lastID
+                    data: {
+                        id: this.lastID,
+                        itemId: this.lastID
+                    }
                 });
             });
         });
     }
 
     /**
-     * Busca todos os itens disponíveis
+     * Busca todos os itens disponíveis com filtros opcionais
+     * 
+     * @param {Object} filters - Filtros de busca (todos opcionais)
+     * @param {string} filters.title - Busca parcial no título (LIKE %title%)
+     * @param {string} filters.category - Busca exata por categoria
+     * @param {string} filters.condition - Busca exata por condição
+     * @param {string} filters.publishDate - Data de publicação (>= data)
+     * @param {number} filters.minPrice - Preço mínimo
+     * @param {number} filters.maxPrice - Preço máximo
+     * @param {string} filters.location - Busca parcial na localização
+     * 
+     * @returns {Promise<Object>} Lista de itens encontrados
+     * 
+     * @note Apenas retorna itens com status = 'available'
+     * @note Faz JOIN com tabela users para incluir ownerName e ownerEmail
+     * @note Resultados ordenados por data de criação (mais recentes primeiro)
+     * 
+     * @example
+     * // Busca por categoria e condição
+     * getAllAvailableItems({ category: 'Ferramentas', condition: 'Excelente' })
+     * 
+     * // Busca por título parcial
+     * getAllAvailableItems({ title: 'furadeira' })
+     * 
+     * // Busca por data de publicação
+     * getAllAvailableItems({ publishDate: '2024-01-01' })
      */
     async getAllAvailableItems(filters = {}) {
         return new Promise((resolve, reject) => {
+            // Query base: busca itens disponíveis com dados do proprietário
             let sql = `SELECT 
                 items.*,
                 users.name as ownerName,
                 users.email as ownerEmail
                 FROM items 
                 LEFT JOIN users ON items.ownerId = users.id
-                WHERE items.status = 'Disponível'`;
+                WHERE items.status = 'available'`; // Apenas itens disponíveis
             
             const params = [];
 
-            // Filtro de busca por texto (título ou descrição)
-            if (filters.searchText && filters.searchText.trim()) {
-                sql += ' AND (items.title LIKE ? OR items.description LIKE ?)';
-                const searchParam = `%${filters.searchText.trim()}%`;
-                params.push(searchParam, searchParam);
+            console.log('🔍 Processando filtros no service:', filters);
+
+            // Aplica filtros dinamicamente se fornecidos
+            
+            // Filtro por título (busca parcial case-insensitive)
+            if (filters.title && filters.title.trim()) {
+                sql += ' AND items.title LIKE ?';
+                params.push(`%${filters.title.trim()}%`); // Busca parcial
+                console.log('   ✓ Filtro de título aplicado:', filters.title);
             }
 
-            // Filtros opcionais
+            // Filtro por categoria (busca exata, case-sensitive)
             if (filters.category) {
                 sql += ' AND items.category = ?';
                 params.push(filters.category);
+                console.log('   ✓ Filtro de categoria aplicado:', filters.category);
             }
 
+            // Filtro por condição (busca exata, case-sensitive)
+            if (filters.condition) {
+                sql += ' AND items.condition = ?';
+                params.push(filters.condition);
+                console.log('   ✓ Filtro de condição aplicado:', filters.condition);
+            }
+
+            // Filtro por data de publicação (itens >= data especificada)
+            if (filters.publishDate) {
+                sql += ' AND DATE(items.publishDate) >= DATE(?)';
+                params.push(filters.publishDate); // Formato: YYYY-MM-DD
+                console.log('   ✓ Filtro de data aplicado: a partir de', filters.publishDate);
+            }
+
+            // Filtros opcionais adicionais (mantidos para compatibilidade)
             if (filters.minPrice) {
                 sql += ' AND items.priceDaily >= ?';
                 params.push(filters.minPrice);
@@ -85,21 +175,16 @@ class ItemService {
                 params.push(`%${filters.location}%`);
             }
 
-            // Filtro de data - verifica se o item está disponível na data solicitada
-            // Nota: Isso requer uma tabela de agendamentos/reservas para funcionar corretamente
-            // Por enquanto, vamos apenas aceitar o parâmetro mas não filtrar
-            // TODO: Implementar verificação de disponibilidade por data quando houver tabela de reservas
-            
-            // Filtro de período do dia (timeFilter: 'Manhã', 'Tarde', 'Noite')
-            // Nota: Isso também requer dados de disponibilidade de horário nos itens
-            // Por enquanto, vamos apenas aceitar o parâmetro
-            // TODO: Implementar filtro de período quando houver campo de horários disponíveis
-
+            // Ordena por data de criação (mais recentes primeiro)
             sql += ' ORDER BY items.createdAt DESC';
 
+            console.log('📝 SQL Final:', sql);
+            console.log('📌 Params:', params);
+
+            // Executa query no banco
             db.all(sql, params, (err, items) => {
                 if (err) {
-                    console.error('Erro ao buscar itens:', err);
+                    console.error('❌ Erro ao buscar itens:', err);
                     reject({
                         status: 500,
                         message: 'Erro ao buscar itens'
@@ -107,7 +192,9 @@ class ItemService {
                     return;
                 }
 
-                // Parse photos: se for JSON array válido faz parse, senão trata como string simples
+                console.log('✅ Itens encontrados:', items.length);
+
+                // Processa fotos dos itens (parse JSON se necessário)
                 const itemsWithPhotos = this._attachPhotosToItems(items);
 
                 resolve({
@@ -353,7 +440,7 @@ class ItemService {
                 users.name as ownerName
                 FROM items 
                 LEFT JOIN users ON items.ownerId = users.id
-                WHERE items.category = ? AND items.status = 'Disponível'
+                WHERE items.category = ? AND items.status = 'available'
                 ORDER BY items.createdAt DESC`;
 
             db.all(sql, [category], (err, items) => {

@@ -4,6 +4,7 @@ const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
 const itemRoutes = require('./routes/itemRoutes');
 const favoriteRoutes = require('./routes/favoriteRoutes');
+const rentalRoutes = require('./routes/rentalRoutes');
 
 const app = express();
 // Configuração explícita de CORS para permitir o header Authorization
@@ -23,6 +24,7 @@ const PORT = process.env.PORT || 3000;
 // Registrar rotas de itens antes das rotas de usuário para evitar conflito com a rota dinâmica '/:id' em userRoutes
 app.use('/api', itemRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/rentals', rentalRoutes);
 app.use('/api', userRoutes);
 
 // Rota de teste
@@ -33,7 +35,8 @@ app.get('/', (req, res) => {
         endpoints: {
             users: '/api/register, /api/login, /api/profile',
             items: '/api/items, /api/my-items',
-            favorites: '/api/favorites'
+            favorites: '/api/favorites',
+            rentals: '/api/rentals'
         }
     });
 });
