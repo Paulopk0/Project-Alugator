@@ -1,18 +1,6 @@
 import AuthStorage from '../services/AuthStorage';
 const API_URL = 'http://localhost:3000/api';
 
-
-/**
- * Função para obter headers com token de autenticação
- */
-const getAuthHeaders = async () => {
-  const token = await AuthStorage.getToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
-
 /**
  * Função para obter headers com token de autenticação
  */

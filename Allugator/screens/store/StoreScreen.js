@@ -5,14 +5,13 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  TextInput,
   StatusBar,
   ActivityIndicator,
-  Share,
   Alert,
   Image,
+  Dimensions,
+  ScrollView,
 } from 'react-native';
-import ItemCard from '../../components/ItemCard/ItemCard';
 import { getAllItems } from '../../apis/ItemApi';
 import { getItemImage } from '../../assets/images/imageMap';
 import AuthStorage from '../../services/AuthStorage';
@@ -20,9 +19,13 @@ import AuthStorage from '../../services/AuthStorage';
 const COLORS = {
   background: '#F0FFF0',
   primary: '#1DE9B6',
-  darkText: '#444444',
+  darkText: '#444444ff',
   white: '#FFFFFF',
+  lightGray: '#E0E0E0',
+  shadow: '#00000026',
 };
+
+const screenHeight = Dimensions.get('window').height;
 
 const StoreScreen = ({ navigation }) => {
   const [items, setItems] = useState([]);
@@ -167,53 +170,98 @@ const StoreScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.primary} />
+      <StatusBar barStyle="light-content" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Loja</Text>
-          {currentUser && (
-            <Text style={styles.headerSubtitle}>Olá, {currentUser.name}</Text>
+      {/* Background verde com header */}
+      <View style={styles.background}>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerTitle}>Loja</Text>
+            {currentUser && (
+              <Text style={styles.headerSubtitle}>Olá, {currentUser.name}</Text>
+            )}
+          </View>
+        </View>
+      </View>
+
+      {/* Botão de pesquisa separado (acima de tudo) */}
+      <TouchableOpacity
+        style={styles.searchButton}
+        onPress={() => navigation.navigate('Search')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.searchIcon}>🔍</Text>
+      </TouchableOpacity>
+
+      {/* Card branco com conteúdo */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContainer}
+      >
+        <View style={styles.contentCard}>
+          {/* Info bar */}
+          <View style={styles.infoBar}>
+            <Text style={styles.infoText}>
+              📦 {items.length} {items.length === 1 ? 'item disponível' : 'itens disponíveis'}
+            </Text>
+            <TouchableOpacity onPress={handleRefresh}>
+              <Text style={styles.refreshText}>🔄 Atualizar</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Lista de Items */}
+          {items.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>📭</Text>
+              <Text style={styles.emptyTitle}>Nenhum item encontrado</Text>
+              <Text style={styles.emptySubtitle}>
+                Execute o seeder para adicionar items de exemplo
+              </Text>
+            </View>
+          ) : (
+            items.map((item) => (
+              <View key={item.id} style={styles.itemContainer}>
+                {/* Imagem do Item */}
+                {getItemImage(item.photos) && (
+                  <Image 
+                    source={getItemImage(item.photos)} 
+                    style={styles.itemImage}
+                    resizeMode="cover"
+                  />
+                )}
+                
+                <View style={styles.itemContent}>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemTitle}>{item.title}</Text>
+                    <Text style={styles.itemStatus}>{item.status}</Text>
+                  </View>
+                  
+                  <Text style={styles.itemPrice}>R$ {item.priceDaily?.toFixed(2)}/dia</Text>
+                  
+                  <View style={styles.itemDetails}>
+                    <View style={styles.itemBadge}>
+                      <Text style={styles.itemBadgeText}>{item.category}</Text>
+                    </View>
+                    <View style={styles.itemBadge}>
+                      <Text style={styles.itemBadgeText}>{item.condition}</Text>
+                    </View>
+                  </View>
+                  
+                  {item.description && (
+                    <Text style={styles.itemDescription} numberOfLines={2}>
+                      {item.description}
+                    </Text>
+                  )}
+                  
+                  {item.location && (
+                    <Text style={styles.itemLocation}>📍 {item.location}</Text>
+                  )}
+                </View>
+              </View>
+            ))
           )}
         </View>
-        <TouchableOpacity
-          style={styles.searchButton}
-          onPress={() => navigation.navigate('Search')}
-        >
-          <Text style={styles.searchIcon}>🔍</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Info bar */}
-      <View style={styles.infoBar}>
-        <Text style={styles.infoText}>
-          📦 {items.length} {items.length === 1 ? 'item disponível' : 'itens disponíveis'}
-        </Text>
-        <TouchableOpacity onPress={handleRefresh}>
-          <Text style={styles.refreshText}>🔄 Atualizar</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Lista de Items */}
-      <FlatList
-        data={items}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>📭</Text>
-            <Text style={styles.emptyTitle}>Nenhum item encontrado</Text>
-            <Text style={styles.emptySubtitle}>
-              Execute o seeder para adicionar items de exemplo
-            </Text>
-          </View>
-        }
-      />
+      </ScrollView>
     </View>
   );
 };
@@ -221,7 +269,6 @@ const StoreScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   loadingContainer: {
     flex: 1,
@@ -229,17 +276,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.background,
   },
-  header: {
+  background: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: COLORS.primary,
-    paddingTop: 50,
-    paddingBottom: 20,
+    paddingTop: screenHeight * 0.02,
     paddingHorizontal: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    zIndex: 0,
+  },
+  headerContent: {
+    paddingTop: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
     color: COLORS.darkText,
   },
@@ -247,19 +295,52 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.darkText,
     marginTop: 4,
+    opacity: 0.8,
+  },
+  searchButton: {
+    position: 'absolute',
+    top: screenHeight * 0.05,
+    right: 20,
+    width: 45,
+    height: 45,
+    borderRadius: 23,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 5,
+    zIndex: 999,
+  },
+  searchIcon: {
+    fontSize: 20,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    paddingTop: screenHeight * 0.18,
+  },
+  contentCard: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    borderTopLeftRadius: 60,
+    borderTopRightRadius: 60,
+    paddingTop: 30,
+    paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   infoBar: {
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: COLORS.lightGray,
   },
   infoText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.darkText,
     fontWeight: '600',
   },
@@ -268,100 +349,84 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: '600',
   },
-  searchButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  searchIcon: {
-    fontSize: 20,
-  },
-  listContent: {
-    padding: 20,
-  },
   itemContainer: {
     backgroundColor: COLORS.white,
-    borderRadius: 15,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 20,
+    marginBottom: 20,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
     overflow: 'hidden',
   },
   itemImage: {
     width: '100%',
-    height: 200,
+    height: 220,
   },
   itemContent: {
-    padding: 15,
+    padding: 20,
   },
   itemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  itemId: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
-  },
-  itemStatus: {
-    fontSize: 12,
-    color: COLORS.primary,
-    fontWeight: '600',
-    backgroundColor: '#E8F9F5',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    marginBottom: 8,
   },
   itemTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.darkText,
-    marginBottom: 12,
-  },
-  itemInfo: {
-    flexDirection: 'row',
-    marginBottom: 8,
-    alignItems: 'flex-start',
-  },
-  itemLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
-    width: 120,
-  },
-  itemValue: {
-    fontSize: 14,
-    color: COLORS.darkText,
     flex: 1,
+  },
+  itemStatus: {
+    fontSize: 11,
+    color: COLORS.primary,
+    fontWeight: '700',
+    backgroundColor: '#E8F9F5',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    textTransform: 'uppercase',
   },
   itemPrice: {
-    fontSize: 16,
+    fontSize: 24,
     color: COLORS.primary,
     fontWeight: 'bold',
-    flex: 1,
+    marginBottom: 12,
+  },
+  itemDetails: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  itemBadge: {
+    backgroundColor: COLORS.background,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+    marginRight: 8,
+  },
+  itemBadgeText: {
+    fontSize: 12,
+    color: COLORS.darkText,
+    fontWeight: '600',
   },
   itemDescription: {
     fontSize: 14,
-    color: COLORS.darkText,
-    flex: 1,
+    color: '#666',
     lineHeight: 20,
+    marginBottom: 10,
+  },
+  itemLocation: {
+    fontSize: 13,
+    color: '#888',
+    fontWeight: '500',
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    paddingVertical: 80,
   },
   emptyText: {
     fontSize: 60,
@@ -378,6 +443,7 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     paddingHorizontal: 40,
+    lineHeight: 20,
   },
 });
 

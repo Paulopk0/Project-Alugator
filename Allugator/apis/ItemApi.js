@@ -95,4 +95,38 @@ const createItem = async (itemData) => {
   }
 };
 
-export { getAllItems, getItemById, createItem };
+/**
+ * Função para buscar items com filtros
+ * @param {Object} filters - Filtros de busca
+ * @returns {Promise<Object>} Lista de items filtrados
+ */
+const searchItems = async (filters) => {
+  try {
+    const headers = await getAuthHeaders();
+    
+    // Construir query string com filtros
+    const params = new URLSearchParams();
+    if (filters.searchText) params.append('search', filters.searchText);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.timeFilter) params.append('timeFilter', filters.timeFilter);
+    
+    const response = await fetch(`${API_URL}/items?${params.toString()}`, {
+      method: 'GET',
+      headers,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Falha ao buscar items');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar items:', error);
+    throw error;
+  }
+};
+
+export { getAllItems, getItemById, createItem, searchItems };

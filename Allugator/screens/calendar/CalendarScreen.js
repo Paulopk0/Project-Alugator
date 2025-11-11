@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  Dimensions,
 } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 
@@ -13,11 +14,14 @@ const COLORS = {
   background: '#F0FFF0',
   primary: '#1DE9B6',
   lightGreen: '#B8F3D8',
-  darkText: '#444444',
+  darkText: '#444444ff',
   white: '#FFFFFF',
+  shadow: '#00000026',
 };
 
-const CalendarScreen = ({ navigation }) => {
+const screenHeight = Dimensions.get('window').height;
+
+const CalendarScreen = ({ navigation, route }) => {
   const [selected, setSelected] = useState('');
   const [markedDates, setMarkedDates] = useState({});
 
@@ -36,23 +40,26 @@ const CalendarScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.primary} />
+      <StatusBar barStyle="light-content" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Calendário</Text>
+      {/* Background verde com header */}
+      <View style={styles.background}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backIcon}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Calendário</Text>
+        </View>
       </View>
 
       <ScrollView
-        style={styles.content}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContainer}
       >
+        <View style={styles.contentCard}>
         {/* Calendário */}
         <View style={styles.calendarContainer}>
           <Calendar
@@ -86,20 +93,30 @@ const CalendarScreen = ({ navigation }) => {
           <View style={styles.selectedDateInfo}>
             <Text style={styles.selectedDateTitle}>Data Selecionada:</Text>
             <Text style={styles.selectedDate}>
-              {new Date(selected).toLocaleDateString('pt-BR', {
+              {new Date(selected + 'T00:00:00').toLocaleDateString('pt-BR', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
               })}
             </Text>
-            
-            <View style={styles.eventsContainer}>
-              <Text style={styles.eventsTitle}>Agendamentos:</Text>
-              <Text style={styles.noEvents}>Nenhum agendamento para esta data</Text>
-            </View>
+
+            {/* Botão para confirmar seleção */}
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={() => {
+                // Passa a data de volta e fecha o modal
+                if (route.params?.onSelectDate) {
+                  route.params.onSelectDate(selected);
+                }
+                navigation.goBack();
+              }}
+            >
+              <Text style={styles.confirmButtonText}>Confirmar Data</Text>
+            </TouchableOpacity>
           </View>
         )}
+        </View>
       </ScrollView>
     </View>
   );
@@ -110,9 +127,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  header: {
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: screenHeight * 0.18,
     backgroundColor: COLORS.primary,
-    paddingTop: 50,
+    zIndex: 1,
+  },
+  headerContent: {
+    paddingTop: 15,
     paddingBottom: 20,
     paddingHorizontal: 20,
     flexDirection: 'row',
@@ -122,19 +147,34 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   backIcon: {
-    fontSize: 24,
+    fontSize: 28,
     color: COLORS.darkText,
+    fontWeight: 'bold',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: COLORS.darkText,
   },
-  content: {
-    flex: 1,
+  scrollContainer: {
+    paddingTop: screenHeight * 0.18,
+  },
+  contentCard: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 60,
+    borderTopRightRadius: 60,
+    paddingTop: 40,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    minHeight: screenHeight * 0.82,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 10,
   },
   calendarContainer: {
-    margin: 20,
+    marginBottom: 20,
     borderRadius: 15,
     overflow: 'hidden',
     backgroundColor: COLORS.lightGreen,
@@ -148,15 +188,10 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
   selectedDateInfo: {
-    margin: 20,
     padding: 20,
-    backgroundColor: COLORS.white,
+    backgroundColor: '#F5F5F5',
     borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    marginBottom: 20,
   },
   selectedDateTitle: {
     fontSize: 14,
@@ -168,23 +203,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.darkText,
     textTransform: 'capitalize',
-    marginBottom: 20,
+    marginBottom: 30,
   },
-  eventsContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 15,
+  confirmButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 20,
   },
-  eventsTitle: {
+  confirmButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: COLORS.darkText,
-    marginBottom: 10,
-  },
-  noEvents: {
-    fontSize: 14,
-    color: '#999',
-    fontStyle: 'italic',
   },
 });
 
