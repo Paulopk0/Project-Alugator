@@ -12,13 +12,12 @@ const COLORS = {
   white: '#FFFFFF',
 };
 
-// Obtém a altura da tela para o posicionamento inicial do card
-const screenHeight = Dimensions.get('window').height;
-
 /**
  * Tela de Cadastro com layout de fundo completo e card de conteúdo animado.
  */
 const RegisterScreen = ({ navigation }) => {
+  // Obtém a altura da tela para o posicionamento inicial do card
+  const screenHeight = Dimensions.get('window').height;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -57,17 +56,17 @@ const RegisterScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.background}>
+      <View style={[styles.background, { paddingTop: screenHeight * 0.12 }]}>
         <Text style={styles.headerText}>Criar Conta</Text>
       </View>
 
       {/* O conteúdo rolável que fica por cima */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[styles.scrollContainer, { paddingTop: screenHeight * 0.25 }]}
       >
         {/* O card com o formulário*/}
-        <View style={styles.contentCard}>
+        <View style={[styles.contentCard, { minHeight: screenHeight * 0.75 }]}>
           <CustomTextInput
             label="Nome Completo"
             placeholder="exemplo da silva"
@@ -144,8 +143,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
-    // Posiciona o texto do header na área visível do topo
-    paddingTop: screenHeight * 0.12, 
   },
   headerText: {
     fontSize: 32,
@@ -153,8 +150,6 @@ const styles = StyleSheet.create({
     color: COLORS.darkText,
   },
   scrollContainer: {
-    // Adiciona um espaço no topo, empurrando o card para baixo
-    paddingTop: screenHeight * 0.25,
     height: 500,
   },
   contentCard: {
@@ -164,7 +159,6 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingHorizontal: 40,
     paddingBottom: 200,
-    minHeight: screenHeight * 0.75, // Garante que o card tenha no mínimo a altura para preencher a tela inicial
   },
   termsText: {
     color: COLORS.darkText,

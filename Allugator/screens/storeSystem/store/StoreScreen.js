@@ -40,10 +40,10 @@ const COLORS = {
   shadow: '#00000026',
 };
 
-// Altura da tela para cálculos de layout
-const screenHeight = Dimensions.get('window').height;
-
 const StoreScreen = ({ navigation }) => {
+  // Altura da tela para cálculos de layout (movido para dentro do componente)
+  const screenHeight = Dimensions.get('window').height;
+  
   // ESTADOS DO COMPONENTE
   const [items, setItems] = useState([]); // Lista de itens disponíveis
   const [loading, setLoading] = useState(true); // Indicador de carregamento inicial
@@ -255,7 +255,7 @@ const StoreScreen = ({ navigation }) => {
       <StatusBar barStyle="light-content" />
       
       {/* Background verde com header */}
-      <View style={styles.background}>
+      <View style={[styles.background, { paddingTop: screenHeight * 0.02 }]}>
         <View style={styles.headerContent}>
           <View>
             <Text style={styles.headerTitle}>Loja</Text>
@@ -268,7 +268,7 @@ const StoreScreen = ({ navigation }) => {
 
       {/* Botão de pesquisa separado (acima de tudo) */}
       <TouchableOpacity
-        style={styles.searchButton}
+        style={[styles.searchButton, { top: screenHeight * 0.05 }]}
         onPress={() => navigation.navigate('Search')}
         activeOpacity={0.7}
       >
@@ -278,7 +278,7 @@ const StoreScreen = ({ navigation }) => {
       {/* Card branco com conteúdo */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[styles.scrollContainer, { paddingTop: screenHeight * 0.18 }]}
       >
         <View style={styles.contentCard}>
           {/* Info bar */}
@@ -388,7 +388,6 @@ const styles = StyleSheet.create({
   background: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: COLORS.primary,
-    paddingTop: screenHeight * 0.02,
     paddingHorizontal: 20,
     zIndex: 0,
   },
@@ -408,7 +407,6 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     position: 'absolute',
-    top: screenHeight * 0.05,
     right: 20,
     width: 45,
     height: 45,
@@ -428,7 +426,6 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingTop: screenHeight * 0.18,
   },
   contentCard: {
     flex: 1,

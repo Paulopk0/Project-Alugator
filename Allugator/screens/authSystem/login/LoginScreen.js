@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, StatusBar, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
-import CustomButton from '../../components/CustomButton/CustomButton';
-import CustomTextInput from '../../components/CustomTextInput/CustomTextInput';
-import MessageDisplay from '../../components/MessageDisplay/MessageDisplay';
-import { login } from '../../apis/AuthApi';
-import AuthStorage from '../../services/AuthStorage'; 
+import CustomButton from '../../../components/CustomButton/CustomButton';
+import CustomTextInput from '../../../components/CustomTextInput/CustomTextInput';
+import MessageDisplay from '../../../components/MessageDisplay/MessageDisplay';
+import { login } from '../../../apis/AuthApi';
+import AuthStorage from '../../../services/AuthStorage'; 
 
 const COLORS = {
   background: '#F0FFF0',
@@ -13,9 +13,9 @@ const COLORS = {
   white: '#FFFFFF',
 };
 
-const screenHeight = Dimensions.get('window').height;
-
 const LoginScreen = ({ navigation }) => {
+  const screenHeight = Dimensions.get('window').height;
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [feedback, setFeedback] = useState({ message: '', type: '' });
@@ -61,13 +61,13 @@ const LoginScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      <View style={styles.background}>
+      <View style={[styles.background, { paddingTop: screenHeight * 0.12 }]}>
         <Text style={styles.headerText}>Bem-Vindo</Text>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[styles.scrollContainer, { paddingTop: screenHeight * 0.25 }]}
         keyboardShouldPersistTaps="handled" 
       >
         <View style={styles.contentCard}>
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
-    paddingTop: screenHeight * 0.12,
+    // paddingTop removido - será inline
   },
   headerText: {
     fontSize: 32,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingTop: screenHeight * 0.25,
+    // paddingTop removido - será inline
   },
   contentCard: {
     flex: 1,

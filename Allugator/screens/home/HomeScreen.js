@@ -8,8 +8,6 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
-const { height: screenHeight } = Dimensions.get('window');
-
 const COLORS = {
   primary: '#1DE9B6',
   background: '#F0FFF0',
@@ -18,12 +16,13 @@ const COLORS = {
 };
 
 const HomeScreen = ({ navigation }) => {
+  const { height: screenHeight } = Dimensions.get('window');
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
       
       {/* Background verde */}
-      <View style={styles.backgroundGreen} />
+      <View style={[styles.backgroundGreen, { height: screenHeight * 0.35 }]} />
 
       <View style={styles.content}>
         {/* Card branco com conteúdo */}
@@ -59,7 +58,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: screenHeight * 0.35,
     backgroundColor: COLORS.primary,
     zIndex: 1,
   },

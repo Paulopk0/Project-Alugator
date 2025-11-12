@@ -21,6 +21,7 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { getItemImage } from '../../../assets/images/imageMap';
 import { createRental } from '../../../apis/RentalApi';
@@ -37,6 +38,8 @@ const COLORS = {
 };
 
 const PaymentScreen = ({ route, navigation }) => {
+  const screenHeight = Dimensions.get('window').height;
+  
   // Recebe dados da navegação (de ItemDetails)
   const { item, days, totalPrice } = route.params;
   
@@ -125,7 +128,7 @@ const PaymentScreen = ({ route, navigation }) => {
       <StatusBar barStyle="light-content" />
       
       {/* Background verde */}
-      <View style={styles.background}>
+      <View style={[styles.background, { height: screenHeight * 0.18 }]}>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Pagamento</Text>
         </View>
@@ -141,10 +144,10 @@ const PaymentScreen = ({ route, navigation }) => {
 
       <ScrollView 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[styles.scrollContainer, { paddingTop: screenHeight * 0.18 }]}
       >
         {/* Card branco com conteúdo */}
-        <View style={styles.contentCard}>
+        <View style={[styles.contentCard, { minHeight: screenHeight * 0.82 }]}>
 
           {/* Imagem do item */}
           <View style={styles.imageContainer}>
@@ -237,7 +240,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: Dimensions.get('window').height * 0.18,
     backgroundColor: COLORS.primary,
   },
   headerContent: {
@@ -265,7 +267,6 @@ const styles = StyleSheet.create({
     color: COLORS.darkText,
   },
   scrollContainer: {
-    paddingTop: Dimensions.get('window').height * 0.18,
   },
   contentCard: {
     backgroundColor: COLORS.white,
@@ -274,7 +275,6 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingHorizontal: 20,
     paddingBottom: 100,
-    minHeight: Dimensions.get('window').height * 0.82,
     shadowColor: '#00000026',
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.15,

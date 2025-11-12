@@ -11,10 +11,8 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getUserFavorites, toggleFavorite } from '../../../apis/FavoriteApi';
-import { getItemImage } from '../../../assets/images/imageMap';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+import { getUserFavorites, toggleFavorite } from '../../apis/FavoriteApi';
+import { getItemImage } from '../../assets/images/imageMap';
 
 const COLORS = {
   primary: '#1DE9B6',
@@ -25,6 +23,7 @@ const COLORS = {
 };
 
 const FavoritesScreen = ({ navigation }) => {
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -87,7 +86,7 @@ const FavoritesScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Background verde */}
-      <View style={styles.backgroundGreen} />
+      <View style={[styles.backgroundGreen, { height: screenHeight * 0.18 }]} />
 
       <ScrollView
         style={styles.scrollView}
@@ -103,7 +102,7 @@ const FavoritesScreen = ({ navigation }) => {
         }
       >
         {/* Card branco com conteúdo */}
-        <View style={styles.contentCard}>
+        <View style={[styles.contentCard, { minHeight: screenHeight * 0.82 }]}>
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity
@@ -205,7 +204,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: screenHeight * 0.18,
     backgroundColor: COLORS.primary,
     zIndex: 1,
   },
@@ -221,7 +219,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 60,
     borderTopRightRadius: 60,
-    minHeight: screenHeight * 0.82,
     paddingHorizontal: 24,
     paddingTop: 30,
     paddingBottom: 40,

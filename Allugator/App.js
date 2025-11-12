@@ -1,5 +1,5 @@
 import React from 'react';
-import {  Text } from 'react-native';
+import { Text, Dimensions, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,21 +7,21 @@ import { StatusBar } from 'expo-status-bar';
 
 // Import screens
 import AuthScreen from './screens/authSystem/auth/authScreen';
-import LoginScreen from './screens/login/LoginScreen';
+import LoginScreen from './screens/authSystem/login/LoginScreen';
 import RegisterScreen from './screens/authSystem/register/RegisterScreen';
-import ForgotPasswordScreen from './screens/forgotpassword/ForgotPasswordScreen';
+import ForgotPasswordScreen from './screens/authSystem/forgotpassword/ForgotPasswordScreen';
 import HomeScreen from './screens/home/HomeScreen';
 import StoreScreen from './screens/storeSystem/store/StoreScreen';
 import SearchScreen from './screens/search/SearchScreen';
 import SearchResultsScreen from './screens/search/searchResults/SearchResultsScreen';
 import FavoritesScreen from './screens/favorites/FavoritesScreen';
-import CalendarScreen from './screens/calendar/CalendarScreen';
+import CalendarScreen from './screens/search/calendar/CalendarScreen';
 import TransactionScreen from './screens/transaction/TransactionScreen';
 import PerfilScreen from './screens/perfil/PerfilScreen';
-import ItemDetailsScreen from './screens/itemDetails/ItemDetailsScreen';
-import PaymentScreen from './screens/payment/PaymentScreen';
-import RentalTrackingScreen from './screens/rentalTracking/RentalTrackingScreen';
-import AddItemScreen from './screens/addItem/AddItemScreen';
+import ItemDetailsScreen from './screens/storeSystem/itemDetails/ItemDetailsScreen';
+import PaymentScreen from './screens/transaction/payment/PaymentScreen';
+import RentalTrackingScreen from './screens/transaction/rentalTracking/RentalTrackingScreen';
+import AddItemScreen from './screens/storeSystem/addItem/AddItemScreen';
 
 const Stack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
@@ -196,7 +196,6 @@ function MainTabNavigator() {
 }
 
 export default function App() {
-  console.log('App iniciando...');
   return (
     <NavigationContainer>
       <StatusBar style="auto" />

@@ -39,9 +39,6 @@ const COLORS = {
   shadow: '#00000026',
 };
 
-// Altura da tela para cálculos de layout
-const screenHeight = Dimensions.get('window').height;
-
 // Categorias disponíveis para filtro (devem corresponder às do banco de dados)
 const CATEGORIES = [
   'Ferramentas',
@@ -61,6 +58,9 @@ const CONDITIONS = [
 ];
 
 const SearchScreen = ({ navigation, route }) => {
+  // Altura da tela para cálculos de layout
+  const screenHeight = Dimensions.get('window').height;
+  
   // ESTADOS DOS FILTROS
   const [title, setTitle] = useState(''); // Busca por título (parcial)
   const [selectedCategory, setSelectedCategory] = useState(''); // Categoria selecionada
@@ -147,7 +147,7 @@ const SearchScreen = ({ navigation, route }) => {
       />
       
       {/* Background verde */}
-      <View style={styles.background}>
+      <View style={[styles.background, { height: screenHeight * 0.18 }]}>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Buscar</Text>
         </View>
@@ -163,9 +163,9 @@ const SearchScreen = ({ navigation, route }) => {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[styles.scrollContainer, { paddingTop: screenHeight * 0.18 }]}
       >
-        <View style={styles.contentCard}>
+        <View style={[styles.contentCard, { minHeight: screenHeight * 0.82 }]}>
           {/* Campo de Busca por Título */}
           <View style={styles.searchContainer}>
             <Text style={styles.searchIcon}>🔍</Text>
@@ -312,7 +312,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: screenHeight * 0.18,
     backgroundColor: COLORS.primary,
     zIndex: 0,
   },
@@ -341,7 +340,6 @@ const styles = StyleSheet.create({
     color: COLORS.darkText,
   },
   scrollContainer: {
-    paddingTop: screenHeight * 0.18,
   },
   contentCard: {
     backgroundColor: COLORS.white,
@@ -350,7 +348,6 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingHorizontal: 20,
     paddingBottom: 30,
-    minHeight: screenHeight * 0.82,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.15,

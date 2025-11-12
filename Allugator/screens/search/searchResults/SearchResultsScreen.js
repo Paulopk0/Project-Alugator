@@ -11,8 +11,6 @@ import {
 import { getItemImage } from '../../../assets/images/imageMap';
 import { translateItemStatus } from '../../../utils/translationHelpers';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
 const COLORS = {
   primary: '#1DE9B6',
   background: '#F0FFF0',
@@ -22,6 +20,7 @@ const COLORS = {
 };
 
 const SearchResultsScreen = ({ navigation, route }) => {
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const { items = [], filters = {} } = route.params || {};
 
   const formatPrice = (price) => {
@@ -31,7 +30,7 @@ const SearchResultsScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       {/* Background verde */}
-      <View style={styles.backgroundGreen} />
+      <View style={[styles.backgroundGreen, { height: screenHeight * 0.18 }]} />
 
       {/* Botão de voltar (acima de tudo) */}
       <TouchableOpacity
@@ -47,7 +46,7 @@ const SearchResultsScreen = ({ navigation, route }) => {
         showsVerticalScrollIndicator={false}
       >
         {/* Card branco com conteúdo */}
-        <View style={styles.contentCard}>
+        <View style={[styles.contentCard, { minHeight: screenHeight * 0.82 }]}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Resultados da Busca</Text>
@@ -155,7 +154,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: screenHeight * 0.18,
     backgroundColor: COLORS.primary,
     zIndex: 1,
   },
@@ -171,7 +169,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 60,
     borderTopRightRadius: 60,
-    minHeight: screenHeight * 0.82,
     paddingHorizontal: 24,
     paddingTop: 30,
     paddingBottom: 40,

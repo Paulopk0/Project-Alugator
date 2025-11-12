@@ -16,13 +16,14 @@ const COLORS = {
  */
 
 const AuthScreen = ({ navigation }) => {
+  console.log('🎯 AuthScreen renderizando!', navigation ? 'navigation OK' : 'navigation UNDEFINED');
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
 
       <Image
-        source={require('../../assets/images/logo.png')}
+        source={require('../../../assets/images/logo.png')}
         style={styles.logo}
         resizeMode="contain"
       />

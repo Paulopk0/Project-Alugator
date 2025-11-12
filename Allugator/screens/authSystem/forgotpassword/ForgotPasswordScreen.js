@@ -10,10 +10,10 @@ const COLORS = {
   white: '#FFFFFF',
 };
 
-// Obtém a altura da tela para o posicionamento
-const screenHeight = Dimensions.get('window').height;
-
 const ForgotPasswordScreen = ({ navigation }) => {
+  // Obtém a altura da tela para o posicionamento (movido para dentro)
+  const screenHeight = Dimensions.get('window').height;
+  
   const [email, setEmail] = useState('');
 
   const handleNextStep = () => {
@@ -24,14 +24,14 @@ const ForgotPasswordScreen = ({ navigation }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       {/* Fundo colorido que ocupa 100% da tela com o header */}
-      <View style={styles.background}>
+      <View style={[styles.background, { paddingTop: screenHeight * 0.12 }]}>
         <Text style={styles.headerText}>Recuperar Senha</Text>
       </View>
 
       {/* Conteúdo rolável que fica por cima */}
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContainer}
+        contentContainerStyle={[styles.scrollContainer, { paddingTop: screenHeight * 0.25 }]}
       >
         {/* Card com o formulário */}
         <View style={styles.contentCard}>
@@ -68,7 +68,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
-    paddingTop: screenHeight * 0.12,
   },
   headerText: {
     fontSize: 32,
@@ -77,7 +76,6 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingTop: screenHeight * 0.25,
   },
   contentCard: {
     flex: 1, 

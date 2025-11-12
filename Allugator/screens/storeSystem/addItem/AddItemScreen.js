@@ -49,9 +49,9 @@ const COLORS = {
     shadow: '#00000026',
 };
 
-const screenHeight = Dimensions.get('window').height;
-
 const AddItemScreen = ({ navigation }) => {
+    const screenHeight = Dimensions.get('window').height;
+    
     // ESTADOS DO FORMULÁRIO
     const [title, setTitle] = useState(''); // Título do item
     const [description, setDescription] = useState(''); // Descrição detalhada
@@ -189,7 +189,7 @@ const AddItemScreen = ({ navigation }) => {
             />
 
             {/* Background verde */}
-            <View style={styles.background}>
+            <View style={[styles.background, { height: screenHeight * 0.18 }]}>
                 <View style={styles.headerContent}>
                     <Text style={styles.headerTitle}>Cadastrar Item</Text>
                 </View>
@@ -203,11 +203,11 @@ const AddItemScreen = ({ navigation }) => {
                 <Text style={styles.backIcon}>←</Text>
             </TouchableOpacity>
 
-            <ScrollView 
+            <ScrollView
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scrollContainer}
+                contentContainerStyle={[styles.scrollContainer, { paddingTop: screenHeight * 0.18 }]}
             >
-                <View style={styles.contentCard}>
+                <View style={[styles.contentCard, { minHeight: screenHeight * 0.82 }]}>
                 {/* Título */}
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Título do Item *</Text>
@@ -359,7 +359,6 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        height: screenHeight * 0.18,
         backgroundColor: COLORS.primary,
         zIndex: 0,
     },
@@ -388,7 +387,6 @@ const styles = StyleSheet.create({
         color: COLORS.darkText,
     },
     scrollContainer: {
-        paddingTop: screenHeight * 0.18,
     },
     contentCard: {
         backgroundColor: COLORS.white,
@@ -397,7 +395,6 @@ const styles = StyleSheet.create({
         paddingTop: 40,
         paddingHorizontal: 20,
         paddingBottom: 30,
-        minHeight: screenHeight * 0.82,
         shadowColor: COLORS.shadow,
         shadowOffset: { width: 0, height: -3 },
         shadowOpacity: 0.15,
