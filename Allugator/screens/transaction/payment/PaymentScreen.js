@@ -1,14 +1,13 @@
 /**
- * PaymentScreen - Tela de confirmação de pagamento
+ * PaymentScreen - Tela de Resumo Final e Checkout
  * 
- * Exibe resumo do aluguel e processa o pagamento.
- * Fluxo: ItemDetails → Payment → RentalTracking
+ * Tela completa de revisão antes do pagamento com:
+ * - Resumo da reserva (item, período, localização)
+ * - Detalhamento de custos (aluguel, taxa de serviço, seguro, total)
+ * - Seletor de método de pagamento
+ * - Informações de contato
  * 
- * Funcionalidades:
- * - Exibe resumo: item, período, valores
- * - Calcula preço total (subtotal - descontos)
- * - Cria aluguel no banco via API
- * - Navega para acompanhamento do aluguel
+ * Fluxo: ItemDetails → Payment (Checkout) → ProcessingPayment → RentalTracking
  */
 
 import React, { useState } from 'react';
@@ -22,9 +21,9 @@ import {
   StatusBar,
   Alert,
   Dimensions,
+  TextInput,
 } from 'react-native';
 import { getItemImage } from '../../../assets/images/imageMap';
-import { createRental } from '../../../apis/RentalApi';
 
 // Paleta de cores do aplicativo
 const COLORS = {
@@ -35,6 +34,8 @@ const COLORS = {
   lightGray: '#E0E0E0',
   gray: '#888888',
   lightGreen: '#E8F5E9',
+  error: '#FF5252',
+  warning: '#FFA726',
 };
 
 const PaymentScreen = ({ route, navigation }) => {
@@ -43,84 +44,63 @@ const PaymentScreen = ({ route, navigation }) => {
   // Recebe dados da navegação (de ItemDetails)
   const { item, days, totalPrice } = route.params;
   
-  // Estado de processamento do pagamento
-  const [isProcessing, setIsProcessing] = useState(false);
+  // Estados
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('pix'); // 'pix', 'credit_card', 'add_card'
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
 
-  // CÁLCULOS DE VALORES
-  const pricePerDay = parseFloat(item.priceDaily || 0); // Preço por dia
-  const subtotal = pricePerDay * days; // Subtotal sem descontos
-  const couponDiscount = 0; // Desconto de cupom (não implementado ainda)
-  const total = subtotal - couponDiscount; // Total final
+  // CÁLCULOS DE VALORES DETALHADOS
+  const pricePerDay = parseFloat(item.priceDaily || 0);
+  const rentalValue = pricePerDay * days; // Valor do aluguel
+  const serviceFeePercentage = 0.10; // 10% de taxa de serviço
+  const serviceFee = rentalValue * serviceFeePercentage; // Taxa de serviço
+  const insuranceValue = 15.00; // Valor fixo do seguro/caução (opcional)
+  const total = rentalValue + serviceFee + insuranceValue; // TOTAL FINAL
+
+  // Métodos de pagamento disponíveis
+  const paymentMethods = [
+    { id: 'pix', name: 'PIX', icon: '💳', subtitle: 'Aprovação instantânea' },
+    { id: 'credit_card', name: 'Cartão de Crédito', icon: '💳', subtitle: '**** **** **** 1234' },
+    { id: 'add_card', name: 'Adicionar Novo Cartão', icon: '➕', subtitle: 'Cadastrar novo cartão' },
+  ];
 
   /**
-   * Confirma pagamento e cria aluguel no banco
-   * 
-   * Processo:
-   * 1. Calcula data de início (hoje) e data de fim (hoje + dias)
-   * 2. Monta objeto com dados do aluguel
-   * 3. Envia para API criar registro no banco
-   * 4. Se sucesso → navega para RentalTracking
-   * 5. Se item indisponível (409) → mostra alerta e volta
-   * 6. Se erro → mostra mensagem de erro
+   * Valida informações e navega para tela de processamento de pagamento
    */
-  const handleConfirmPayment = async () => {
-    try {
-      setIsProcessing(true);
-      
-      // Calcula datas de início e fim do aluguel
-      const startDate = new Date(); // Data de hoje
-      const endDate = new Date();
-      endDate.setDate(endDate.getDate() + days); // Adiciona quantidade de dias
-      
-      // Monta objeto com dados do aluguel
-      const rentalData = {
-        itemId: item.id,
-        startDate: startDate.toISOString(), // Formato ISO 8601
-        endDate: endDate.toISOString(),
-        days: days,
-        pricePerDay: pricePerDay,
-        totalPrice: total
-      };
-      
-      // Cria aluguel via API
-      const response = await createRental(rentalData);
-      
-      if (response.status === 201) {
-        // Sucesso: navega para tela de acompanhamento
-        // replace() remove Payment do histórico (não pode voltar)
-        navigation.replace('RentalTracking', { 
-          rentalId: response.data.id 
-        });
-      } else if (response.status === 409) {
-        // Item foi alugado por outro usuário entre a verificação e o pagamento
-        Alert.alert(
-          'Item Indisponível',
-          'Este item não está mais disponível para aluguel.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.goBack()
-            }
-          ]
-        );
-      } else {
-        // Outro erro
-        throw new Error(response.message || 'Erro ao criar aluguel');
-      }
-    } catch (error) {
-      console.error('Erro ao confirmar pagamento:', error);
-      Alert.alert(
-        'Erro',
-        'Não foi possível processar o pagamento. Tente novamente.',
-        [
-          {
-            text: 'OK'
-          }
-        ]
-      );
-    } finally {
-      setIsProcessing(false);
+  const handleProceedToPayment = () => {
+    // Validação básica
+    if (!selectedPaymentMethod) {
+      Alert.alert('Atenção', 'Por favor, selecione um método de pagamento.');
+      return;
     }
+
+    if (contactPhone && contactPhone.length < 10) {
+      Alert.alert('Atenção', 'Por favor, insira um telefone válido.');
+      return;
+    }
+
+    if (contactEmail && !contactEmail.includes('@')) {
+      Alert.alert('Atenção', 'Por favor, insira um e-mail válido.');
+      return;
+    }
+
+    // Navega para ProcessingPayment com todos os dados
+    navigation.navigate('ProcessingPayment', {
+      item: item,
+      days: days,
+      totalPrice: total,
+      paymentMethod: selectedPaymentMethod,
+      contactInfo: {
+        phone: contactPhone,
+        email: contactEmail
+      },
+      breakdown: {
+        rentalValue,
+        serviceFee,
+        insuranceValue,
+        total
+      }
+    });
   };
 
   return (
@@ -130,11 +110,12 @@ const PaymentScreen = ({ route, navigation }) => {
       {/* Background verde */}
       <View style={[styles.background, { height: screenHeight * 0.18 }]}>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Pagamento</Text>
+          <Text style={styles.headerTitle}>Resumo Final</Text>
+          <Text style={styles.headerSubtitle}>Revise antes de prosseguir</Text>
         </View>
       </View>
 
-      {/* Botão de voltar (acima de tudo) */}
+      {/* Botão de voltar */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -146,83 +127,197 @@ const PaymentScreen = ({ route, navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContainer, { paddingTop: screenHeight * 0.18 }]}
       >
-        {/* Card branco com conteúdo */}
         <View style={[styles.contentCard, { minHeight: screenHeight * 0.82 }]}>
 
-          {/* Imagem do item */}
-          <View style={styles.imageContainer}>
-            <Image
-              source={getItemImage(item.photos || item.photo)}
-              style={styles.itemImage}
-              resizeMode="cover"
-            />
-          </View>
-
-          {/* Resumo do Aluguel */}
-          <View style={styles.summarySection}>
-            <Text style={styles.summaryTitle}>Resumo Do Aluguel</Text>
-            <Text style={styles.itemName}>{item.title || item.name}</Text>
-          </View>
-
-          {/* Período */}
-          <View style={styles.periodSection}>
-            <Text style={styles.periodLabel}>Período:</Text>
-            <Text style={styles.periodValue}>{days} Dias</Text>
-          </View>
-
-          {/* Valores */}
-          <View style={styles.valuesSection}>
-            <View style={styles.valueRow}>
-              <Text style={styles.valueLabel}>Subtotal por Dia/dia:</Text>
-              <Text style={styles.valueAmount}>R${pricePerDay.toFixed(2)}</Text>
+          {/* ========== SEÇÃO 1: RESUMO DA RESERVA ========== */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionIcon}>📋</Text>
+              <Text style={styles.sectionTitle}>Resumo da Reserva</Text>
             </View>
-            
-            <View style={styles.valueRow}>
-              <Text style={styles.valueLabel}>Total Do Aluguel (por {days} dias):</Text>
-              <Text style={styles.valueAmount}>R${subtotal.toFixed(2)}</Text>
-            </View>
-            
-            <View style={styles.valueRow}>
-              <Text style={styles.valueLabel}>Valor Do Cupom: (desconsidere):</Text>
-              <Text style={styles.valueAmount}>R${couponDiscount.toFixed(2)}</Text>
-            </View>
-            
-            <View style={[styles.valueRow, styles.totalRow]}>
-              <Text style={styles.totalLabel}>Total:</Text>
-              <Text style={styles.totalAmount}>R${total.toFixed(2)}</Text>
-            </View>
-          </View>
 
-          {/* Método de Pagamento */}
-          <View style={styles.paymentMethodSection}>
-            <Text style={styles.sectionTitle}>Método De Pagamento</Text>
-            
-            <View style={styles.pixCard}>
-              <View style={styles.pixHeader}>
-                <View style={styles.pixIconContainer}>
-                  <Text style={styles.pixIcon}>💳</Text>
+            <View style={styles.reservationCard}>
+              {/* Imagem do item */}
+              <View style={styles.itemImageContainer}>
+                <Image
+                  source={getItemImage(item.photos || item.photo)}
+                  style={styles.itemImage}
+                  resizeMode="cover"
+                />
+              </View>
+
+              {/* Informações do item */}
+              <View style={styles.itemInfoContainer}>
+                <Text style={styles.itemName}>{item.title || item.name}</Text>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoIcon}>📅</Text>
+                  <Text style={styles.infoText}>{days} Dias</Text>
                 </View>
-                <View style={styles.pixInfo}>
-                  <Text style={styles.pixTitle}>Pix</Text>
-                  <Text style={styles.pixDescription}>Pagamento Mais Fácil</Text>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoIcon}>📍</Text>
+                  <Text style={styles.infoText}>
+                    {item.location || 'Curitiba, PR'}
+                  </Text>
                 </View>
               </View>
             </View>
           </View>
 
-          {/* Botão Confirmar Pagamento */}
+          {/* ========== SEÇÃO 2: DETALHAMENTO DE CUSTOS ========== */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionIcon}>💰</Text>
+              <Text style={styles.sectionTitle}>Detalhamento de Custos</Text>
+            </View>
+
+            <View style={styles.costsCard}>
+              {/* Valor do Aluguel */}
+              <View style={styles.costRow}>
+                <Text style={styles.costLabel}>Valor do Aluguel</Text>
+                <Text style={styles.costValue}>R$ {rentalValue.toFixed(2)}</Text>
+              </View>
+              <Text style={styles.costDetail}>
+                R$ {pricePerDay.toFixed(2)} × {days} dias
+              </Text>
+
+              {/* Taxa de Serviço */}
+              <View style={[styles.costRow, { marginTop: 12 }]}>
+                <Text style={styles.costLabel}>Taxa de Serviço (10%)</Text>
+                <Text style={styles.costValue}>+ R$ {serviceFee.toFixed(2)}</Text>
+              </View>
+
+              {/* Seguro/Caução */}
+              <View style={styles.costRow}>
+                <View style={styles.costLabelWithBadge}>
+                  <Text style={styles.costLabel}>Valor do Seguro</Text>
+                  <View style={styles.optionalBadge}>
+                    <Text style={styles.optionalText}>Opcional</Text>
+                  </View>
+                </View>
+                <Text style={styles.costValue}>+ R$ {insuranceValue.toFixed(2)}</Text>
+              </View>
+              <Text style={styles.costDetail}>
+                Proteção contra danos e imprevistos
+              </Text>
+
+              {/* Linha separadora */}
+              <View style={styles.divider} />
+
+              {/* TOTAL FINAL */}
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>TOTAL FINAL</Text>
+                <Text style={styles.totalValue}>R$ {total.toFixed(2)}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* ========== SEÇÃO 3: MÉTODO DE PAGAMENTO ========== */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionIcon}>💳</Text>
+              <Text style={styles.sectionTitle}>Método de Pagamento</Text>
+            </View>
+
+            {paymentMethods.map((method) => (
+              <TouchableOpacity
+                key={method.id}
+                style={[
+                  styles.paymentMethodCard,
+                  selectedPaymentMethod === method.id && styles.paymentMethodCardActive
+                ]}
+                onPress={() => setSelectedPaymentMethod(method.id)}
+              >
+                <View style={styles.paymentMethodContent}>
+                  <View style={styles.paymentMethodLeft}>
+                    <Text style={styles.paymentMethodIcon}>{method.icon}</Text>
+                    <View style={styles.paymentMethodInfo}>
+                      <Text style={styles.paymentMethodName}>{method.name}</Text>
+                      <Text style={styles.paymentMethodSubtitle}>{method.subtitle}</Text>
+                    </View>
+                  </View>
+                  
+                  {/* Radio button */}
+                  <View style={[
+                    styles.radioButton,
+                    selectedPaymentMethod === method.id && styles.radioButtonActive
+                  ]}>
+                    {selectedPaymentMethod === method.id && (
+                      <View style={styles.radioButtonInner} />
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* ========== SEÇÃO 4: INFORMAÇÕES DE CONTATO ========== */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionIcon}>📞</Text>
+              <View style={styles.sectionTitleContainer}>
+                <Text style={styles.sectionTitle}>Informações de Contato</Text>
+                <View style={styles.optionalBadge}>
+                  <Text style={styles.optionalText}>Opcional</Text>
+                </View>
+              </View>
+            </View>
+
+            <Text style={styles.contactDescription}>
+              Para facilitar o contato sobre retirada/entrega
+            </Text>
+
+            {/* Campo Telefone */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Telefone</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="(XX) XXXXX-XXXX"
+                placeholderTextColor={COLORS.gray}
+                keyboardType="phone-pad"
+                value={contactPhone}
+                onChangeText={setContactPhone}
+                maxLength={15}
+              />
+            </View>
+
+            {/* Campo E-mail */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>E-mail</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="seu@email.com"
+                placeholderTextColor={COLORS.gray}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={contactEmail}
+                onChangeText={setContactEmail}
+              />
+            </View>
+          </View>
+
+          {/* ========== BOTÃO PRINCIPAL ========== */}
           <TouchableOpacity
-            style={[
-              styles.confirmButton,
-              isProcessing && styles.confirmButtonDisabled
-            ]}
-            onPress={handleConfirmPayment}
-            disabled={isProcessing}
+            style={styles.mainButton}
+            onPress={handleProceedToPayment}
+            activeOpacity={0.8}
           >
-            <Text style={styles.confirmButtonText}>
-              {isProcessing ? 'PROCESSANDO...' : 'CONFIRMAR PAGAMENTO'}
+            <Text style={styles.mainButtonText}>
+              PROSSEGUIR PARA PAGAMENTO
+            </Text>
+            <Text style={styles.mainButtonSubtext}>
+              R$ {total.toFixed(2)}
             </Text>
           </TouchableOpacity>
+
+          {/* Mensagem de segurança */}
+          <View style={styles.securityMessage}>
+            <Text style={styles.securityIcon}>🔒</Text>
+            <Text style={styles.securityText}>
+              Seus dados estão protegidos com criptografia de ponta a ponta
+            </Text>
+          </View>
 
         </View>
       </ScrollView>
@@ -249,6 +344,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: COLORS.darkText,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: COLORS.darkText,
+    opacity: 0.7,
+    marginTop: 4,
+  },
   backButton: {
     position: 'absolute',
     top: 15,
@@ -261,183 +367,282 @@ const styles = StyleSheet.create({
     color: COLORS.darkText,
     fontWeight: 'bold',
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: COLORS.darkText,
-  },
-  scrollContainer: {
-  },
+  scrollContainer: {},
   contentCard: {
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 60,
     borderTopRightRadius: 60,
-    paddingTop: 40,
+    paddingTop: 30,
     paddingHorizontal: 20,
-    paddingBottom: 100,
+    paddingBottom: 40,
     shadowColor: '#00000026',
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 10,
   },
-  printerButton: {
-    backgroundColor: COLORS.lightGreen,
-    borderRadius: 20,
+  
+  // Seções
+  section: {
+    marginBottom: 25,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginBottom: 20,
-    gap: 10,
+    marginBottom: 15,
   },
-  printerIcon: {
-    fontSize: 20,
+  sectionIcon: {
+    fontSize: 24,
+    marginRight: 10,
   },
-  printerText: {
-    fontSize: 16,
-    fontWeight: '600',
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
     color: COLORS.darkText,
   },
-  imageContainer: {
-    width: '100%',
-    height: 180,
-    borderRadius: 20,
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  
+  // Card de Reserva
+  reservationCard: {
+    backgroundColor: COLORS.background,
+    borderRadius: 15,
+    padding: 15,
+    flexDirection: 'row',
+    gap: 15,
+  },
+  itemImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: COLORS.lightGray,
-    marginBottom: 20,
   },
   itemImage: {
     width: '100%',
     height: '100%',
   },
-  summarySection: {
-    marginBottom: 20,
+  itemInfoContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
-  summaryTitle: {
-    fontSize: 18,
+  itemName: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: COLORS.darkText,
     marginBottom: 8,
   },
-  itemName: {
-    fontSize: 16,
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  infoIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  infoText: {
+    fontSize: 14,
     color: COLORS.gray,
   },
-  periodSection: {
-    marginBottom: 20,
+  
+  // Card de Custos
+  costsCard: {
+    backgroundColor: COLORS.background,
+    borderRadius: 15,
+    padding: 18,
   },
-  periodLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.darkText,
-    marginBottom: 4,
-  },
-  periodValue: {
-    fontSize: 16,
-    color: COLORS.gray,
-  },
-  valuesSection: {
-    marginBottom: 25,
-  },
-  valueRow: {
+  costRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
-  valueLabel: {
-    fontSize: 14,
-    color: COLORS.gray,
-    flex: 1,
+  costLabelWithBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  valueAmount: {
-    fontSize: 14,
+  costLabel: {
+    fontSize: 15,
+    color: COLORS.darkText,
+  },
+  costValue: {
+    fontSize: 15,
     fontWeight: '600',
     color: COLORS.darkText,
   },
+  costDetail: {
+    fontSize: 12,
+    color: COLORS.gray,
+    marginBottom: 8,
+  },
+  optionalBadge: {
+    backgroundColor: COLORS.warning,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  optionalText: {
+    fontSize: 10,
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.lightGray,
+    marginVertical: 15,
+  },
   totalRow: {
-    marginTop: 10,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   totalLabel: {
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.darkText,
   },
-  totalAmount: {
-    fontSize: 20,
+  totalValue: {
+    fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.primary,
   },
-  paymentMethodSection: {
-    marginBottom: 30,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: COLORS.darkText,
-    marginBottom: 15,
-  },
-  pixCard: {
-    backgroundColor: COLORS.lightGreen,
-    borderRadius: 15,
-    padding: 20,
+  
+  // Método de Pagamento
+  paymentMethodCard: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: COLORS.background,
   },
-  pixHeader: {
+  paymentMethodCardActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.lightGreen,
+  },
+  paymentMethodContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  paymentMethodLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  pixIconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: COLORS.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 15,
-  },
-  pixIcon: {
-    fontSize: 24,
-  },
-  pixInfo: {
     flex: 1,
   },
-  pixTitle: {
-    fontSize: 18,
+  paymentMethodIcon: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  paymentMethodInfo: {
+    flex: 1,
+  },
+  paymentMethodName: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: COLORS.darkText,
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  pixDescription: {
-    fontSize: 14,
+  paymentMethodSubtitle: {
+    fontSize: 13,
     color: COLORS.gray,
   },
-  confirmButton: {
+  radioButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioButtonActive: {
+    borderColor: COLORS.primary,
+  },
+  radioButtonInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: COLORS.primary,
-    borderRadius: 25,
-    paddingVertical: 18,
+  },
+  
+  // Informações de Contato
+  contactDescription: {
+    fontSize: 14,
+    color: COLORS.gray,
+    marginBottom: 15,
+  },
+  inputGroup: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.darkText,
+    marginBottom: 6,
+  },
+  input: {
+    backgroundColor: COLORS.background,
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 16,
+    color: COLORS.darkText,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+  },
+  
+  // Botão Principal
+  mainButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 25,
     alignItems: 'center',
     marginTop: 10,
+    marginBottom: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowRadius: 5,
     elevation: 5,
   },
-  confirmButtonDisabled: {
-    backgroundColor: COLORS.lightGray,
-  },
-  confirmButtonText: {
-    fontSize: 16,
+  mainButtonText: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: COLORS.white,
     letterSpacing: 0.5,
+  },
+  mainButtonSubtext: {
+    fontSize: 13,
+    color: COLORS.white,
+    marginTop: 2,
+    opacity: 0.9,
+  },
+  
+  // Mensagem de Segurança
+  securityMessage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.background,
+    borderRadius: 10,
+    gap: 8,
+  },
+  securityIcon: {
+    fontSize: 16,
+  },
+  securityText: {
+    fontSize: 12,
+    color: COLORS.gray,
+    textAlign: 'center',
+    flex: 1,
   },
 });
 

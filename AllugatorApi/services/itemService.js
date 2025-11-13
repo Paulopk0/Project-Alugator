@@ -321,6 +321,74 @@ class ItemService {
     }
 
     /**
+     * Busca itens do proprietário com informações de aluguel ativo (se houver)
+     * Usado na tela de Transações para mostrar quem está alugando cada item
+     */
+    async getItemsByOwnerWithRentals(ownerId) {
+        return new Promise((resolve, reject) => {
+            const sql = `
+                SELECT 
+                    i.*,
+                    r.id as rentalId,
+                    r.startDate,
+                    r.endDate,
+                    r.status as rentalStatus,
+                    r.renterId,
+                    u.name as renterName,
+                    u.email as renterEmail
+                FROM items i
+                LEFT JOIN rentals r ON i.id = r.itemId AND r.status IN ('active', 'confirmed')
+                LEFT JOIN users u ON r.renterId = u.id
+                WHERE i.ownerId = ?
+                ORDER BY i.createdAt DESC
+            `;
+
+            db.all(sql, [ownerId], (err, items) => {
+                if (err) {
+                    console.error('Erro ao buscar itens do proprietário com aluguéis:', err);
+                    reject({
+                        status: 500,
+                        message: 'Erro ao buscar itens'
+                    });
+                    return;
+                }
+
+                const itemsWithPhotos = items.map(item => {
+                    let photos = [];
+                    if (item.photos) {
+                        try {
+                            photos = JSON.parse(item.photos);
+                        } catch (e) {
+                            photos = [item.photos];
+                        }
+                    }
+                    return {
+                        ...item,
+                        photos,
+                        // Informações do aluguel ativo (se houver)
+                        activeRental: item.rentalId ? {
+                            id: item.rentalId,
+                            startDate: item.startDate,
+                            endDate: item.endDate,
+                            status: item.rentalStatus,
+                            renter: {
+                                id: item.renterId,
+                                name: item.renterName,
+                                email: item.renterEmail
+                            }
+                        } : null
+                    };
+                });
+
+                resolve({
+                    status: 200,
+                    items: itemsWithPhotos
+                });
+            });
+        });
+    }
+
+    /**
      * Atualiza um item
      */
     async updateItem(itemId, itemData, ownerId) {

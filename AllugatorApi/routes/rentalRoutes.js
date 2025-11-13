@@ -9,8 +9,11 @@ router.use(authenticateToken);
 // Criar novo aluguel
 router.post('/', rentalController.createRental);
 
-// Buscar aluguéis do usuário logado
+// Buscar aluguéis do usuário logado (itens que o usuário está alugando)
 router.get('/', rentalController.getUserRentals);
+
+// Buscar itens do usuário que estão sendo alugados por outros
+router.get('/my-items', rentalController.getMyRentedOutItems);
 
 // Verificar disponibilidade de um item
 router.get('/check/:itemId', rentalController.checkItemAvailability);
