@@ -1,9 +1,14 @@
 import React from 'react';
-import { Text, Dimensions, View } from 'react-native';
+import { Text, Dimensions, LogBox } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
+
+// Import Contexts
+import { AuthProvider } from './contexts/AuthContext';
+import { ItemProvider } from './contexts/ItemContext';
+import { RentalProvider } from './contexts/RentalContext';
 
 // Import screens
 import AuthScreen from './screens/authSystem/auth/authScreen';
@@ -24,6 +29,12 @@ import ProcessingPaymentScreen from './screens/transaction/processingPayment/Pro
 import RentalTrackingScreen from './screens/transaction/rentalTracking/RentalTrackingScreen';
 import AddItemScreen from './screens/storeSystem/addItem/AddItemScreen';
 import EditItemScreen from './screens/storeSystem/editItem/EditItemScreen';
+
+// Suprime avisos não críticos do console
+LogBox.ignoreLogs([
+  'props.pointerEvents is deprecated',
+  'Unexpected text node',
+]);
 
 const Stack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
@@ -256,30 +267,36 @@ function MainTabNavigator() {
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <StatusBar style="auto" />
-      <Stack.Navigator
-        initialRouteName="Auth"
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: '#F0FFF0' }
-        }}
-      >
-        <Stack.Screen 
-          name="Auth" 
-          component={AuthNavigator}
-          options={{
-            headerShown: false
-          }}
-        />
-        <Stack.Screen 
-          name="MainTabs" 
-          component={MainTabNavigator}
-          options={{
-            headerShown: false
-          }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AuthProvider>
+      <ItemProvider>
+        <RentalProvider>
+          <NavigationContainer>
+            <StatusBar style="auto" />
+          <Stack.Navigator
+            initialRouteName="Auth"
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: '#F0FFF0' }
+            }}
+          >
+          <Stack.Screen 
+            name="Auth" 
+            component={AuthNavigator}
+            options={{
+              headerShown: false
+            }}
+          />
+          <Stack.Screen 
+            name="MainTabs" 
+            component={MainTabNavigator}
+            options={{
+              headerShown: false
+            }}
+          />
+        </Stack.Navigator>
+          </NavigationContainer>
+        </RentalProvider>
+      </ItemProvider>
+    </AuthProvider>
   );
 }

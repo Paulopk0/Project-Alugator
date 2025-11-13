@@ -171,3 +171,75 @@ export const getMyRentedOutItems = async () => {
     throw error;
   }
 };
+
+// Buscar histórico de aluguéis (aluguéis finalizados)
+export const getRentalHistory = async () => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_URL}/history`, {
+      method: 'GET',
+      headers
+    });
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar histórico:', error);
+    throw error;
+  }
+};
+
+// Buscar detalhes completos de um aluguel
+export const getRentalDetails = async (rentalId) => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_URL}/${rentalId}/details`, {
+      method: 'GET',
+      headers
+    });
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar detalhes do aluguel:', error);
+    throw error;
+  }
+};
+
+// Confirmar pagamento de um aluguel
+export const confirmPayment = async (rentalId, paymentData = {}) => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_URL}/${rentalId}/payment`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(paymentData)
+    });
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erro ao confirmar pagamento:', error);
+    throw error;
+  }
+};
+
+// Verificar disponibilidade com datas específicas
+export const checkItemAvailabilityByDates = async (itemId, startDate, endDate) => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(
+      `${API_URL}/check/${itemId}?startDate=${startDate}&endDate=${endDate}`, 
+      {
+        method: 'GET',
+        headers
+      }
+    );
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Erro ao verificar disponibilidade:', error);
+    throw error;
+  }
+};

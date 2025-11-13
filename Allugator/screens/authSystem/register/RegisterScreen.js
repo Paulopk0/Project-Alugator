@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, StatusBar, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import CustomButton from '../../../components/CustomButton/CustomButton';
 import CustomTextInput from '../../../components/CustomTextInput/CustomTextInput';
-import { register } from '../../../apis/AuthApi';
 import MessageDisplay from '../../../components/MessageDisplay/MessageDisplay';
+import { useAuth } from '../../../hooks/useAuth';
 
 const COLORS = {
   background: '#F0FFF0', 
@@ -25,31 +25,40 @@ const RegisterScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+  const [feedback, setFeedback] = useState({ message: '', type: '' });
 
-    const [feedback, setFeedback] = useState({ message: '', type: '' });
+  // ✅ Novo: Hook do AuthContext
+  const { register, loading } = useAuth();
 
   const handleRegister = async () => {
-    // 4. Modificamos a função handleRegister para usar o setFeedback
+    // Valida se as senhas conferem
     if (password !== confirmPassword) {
       setFeedback({ message: 'As senhas não conferem!', type: 'error' });
       return;
     }
 
+    // Valida campos obrigatórios
+    if (!name || !email || !password || !phoneNumber) {
+      setFeedback({ message: 'Por favor, preencha todos os campos.', type: 'error' });
+      return;
+    }
+
     try {
-      const userData = { name, email, phoneNumber, password };
-      await register(userData);
+      // ✅ Novo: Usa o método do contexto
+      const result = await register(name, email, password, phoneNumber);
 
-      // Feedback de sucesso
-      setFeedback({ message: 'Usuário cadastrado com sucesso!', type: 'success' });
-      
-      // Aguarda um pouco antes de navegar para o usuário ver a mensagem
-      setTimeout(() => {
-        navigation.navigate('Login'); // Use o nome da sua tela de Login
-      }, 1500);
-
+      if (result.success) {
+        setFeedback({ message: result.message, type: 'success' });
+        
+        // Aguarda um pouco antes de navegar para o usuário ver a mensagem
+        setTimeout(() => {
+          navigation.replace('MainTabs'); // Navega direto para MainTabs após registro
+        }, 1500);
+      } else {
+        setFeedback({ message: result.message, type: 'error' });
+      }
     } catch (error) {
-      // Feedback de erro da API
-      setFeedback({ message: error.message || 'Erro desconhecido', type: 'error' });
+      setFeedback({ message: error.message || 'Erro ao registrar', type: 'error' });
     }
   };
 
@@ -72,6 +81,7 @@ const RegisterScreen = ({ navigation }) => {
             placeholder="exemplo da silva"
             value={name}
             onChangeText={setName}
+            editable={!loading}
           />
 
           <CustomTextInput
@@ -80,6 +90,7 @@ const RegisterScreen = ({ navigation }) => {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            editable={!loading}
           />
 
           <CustomTextInput
@@ -88,6 +99,7 @@ const RegisterScreen = ({ navigation }) => {
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             keyboardType="phone-pad"
+            editable={!loading}
           />
 
           <CustomTextInput
@@ -98,6 +110,7 @@ const RegisterScreen = ({ navigation }) => {
             secureTextEntry={!isPasswordVisible}
             icon={isPasswordVisible ? '👁️' : '👁️‍🗨️'}
             onIconPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            editable={!loading}
           />
 
           <CustomTextInput
@@ -108,6 +121,7 @@ const RegisterScreen = ({ navigation }) => {
             secureTextEntry={!isConfirmPasswordVisible}
             icon={isConfirmPasswordVisible ? '👁️' : '👁️‍🗨️'}
             onIconPress={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}
+            editable={!loading}
           />
           
           <Text style={styles.termsText}>
@@ -116,12 +130,22 @@ const RegisterScreen = ({ navigation }) => {
           </Text>
 
           <CustomButton
-            title="Criar Conta"
+            title={loading ? 'Criando conta...' : 'Criar Conta'}
             onPress={handleRegister}
-            style={{ backgroundColor: COLORS.primary, marginTop: 20, width: '100%' }}
+            style={{ 
+              backgroundColor: COLORS.primary, 
+              marginTop: 20, 
+              width: '100%',
+              opacity: loading ? 0.6 : 1,
+            }}
+            disabled={loading}
           />
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Text style={styles.backButtonText}>Voltar</Text>
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()} 
+            style={styles.backButton}
+            disabled={loading}
+          >
+            <Text style={[styles.backButtonText, { opacity: loading ? 0.6 : 1 }]}>Voltar</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

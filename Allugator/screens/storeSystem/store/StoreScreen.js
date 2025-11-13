@@ -25,12 +25,10 @@ import {
   ScrollView,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getAllItems } from '../../../apis/ItemApi';
-import { getFavoriteIds, toggleFavorite } from '../../../apis/FavoriteApi';
-import { getMyItemsWithRentals } from '../../../apis/ItemManagementApi';
 import { getItemImage } from '../../../assets/images/imageMap';
-import AuthStorage from '../../../services/AuthStorage';
 import { translateItemStatus } from '../../../utils/translationHelpers';
+import { useAuth } from '../../../hooks/useAuth';
+import { useItems } from '../../../hooks/useItems';
 
 // Paleta de cores do aplicativo
 const COLORS = {
@@ -46,113 +44,49 @@ const StoreScreen = ({ navigation }) => {
   // Altura da tela para cálculos de layout (movido para dentro do componente)
   const screenHeight = Dimensions.get('window').height;
   
-  // ESTADOS DO COMPONENTE
-  const [items, setItems] = useState([]); // Lista de itens disponíveis
-  const [myItems, setMyItems] = useState([]); // Lista de meus itens com info de aluguel
-  const [loading, setLoading] = useState(true); // Indicador de carregamento inicial
-  const [refreshing, setRefreshing] = useState(false); // Indicador de refresh (pull-to-refresh)
-  const [favorites, setFavorites] = useState([]); // IDs dos itens favoritados pelo usuário
-  const [currentUser, setCurrentUser] = useState(null); // Dados do usuário logado
-  const [showingMyItems, setShowingMyItems] = useState(false); // Toggle entre todos os itens e meus itens
+  // ✅ Novo: Hooks dos contextos
+  const { user: currentUser } = useAuth();
+  const { 
+    items, 
+    myItems, 
+    loading, 
+    refreshing,
+    favorites,
+    selectedCategory,
+    filteredItems,
+    loadItems,
+    loadMyItems,
+    loadFavorites,
+    handleCategoryFilter,
+    handleToggleFavorite,
+    onRefresh,
+    getCategories,
+    isNewItem,
+    getRentedCount,
+    isFavorite,
+  } = useItems();
+  
+  // Estado local apenas para UI
+  const [showingMyItems, setShowingMyItems] = useState(false);
 
   /**
-   * Hook de efeito - Executa ao montar o componente
-   * Carrega dados iniciais: usuário, itens e favoritos
+   * Carrega dados iniciais ao montar o componente
    */
   useEffect(() => {
-    loadUserData();
     loadItems();
     loadMyItems();
     loadFavorites();
-  }, []);
-
-  /**
-   * Hook de foco - Atualiza a página quando a tab é clicada
-   */
-  useFocusEffect(
-    useCallback(() => {
-      loadItems();
-      loadMyItems();
-      loadFavorites();
-    }, [])
-  );
-
-  /**
-   * Carrega dados do usuário logado do AsyncStorage
-   * Usado para exibir nome do usuário no header
-   */
-  const loadUserData = async () => {
-    try {
-      const user = await AuthStorage.getUser();
-      setCurrentUser(user);
-    } catch (error) {
-      console.error('Erro ao carregar usuário:', error);
-    }
-  };
-
-  /**
-   * Busca todos os itens disponíveis via API
-   * Atualiza o estado 'items' com a resposta
-   */
-  const loadItems = async () => {
-    try {
-      setLoading(true);
-      const response = await getAllItems();
-      
-      setItems(response.items);
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível carregar os items: ' + error.message);
-      console.error('❌ Erro completo:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Busca itens do usuário logado com informações de aluguel
-   */
-  const loadMyItems = async () => {
-    try {
-      const response = await getMyItemsWithRentals();
-      setMyItems(response.items || []);
-    } catch (error) {
-      console.error('Erro ao carregar meus itens:', error);
-    }
-  };
-
-  /**
-   * Busca IDs dos itens favoritados pelo usuário
-   * Usado para marcar corações como preenchidos
-   */
-  const loadFavorites = async () => {
-    try {
-      const response = await getFavoriteIds();
-      if (response.favoriteIds) {
-        setFavorites(response.favoriteIds);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar favoritos:', error);
-    }
-  };
-
-  /**
-   * Recarrega itens e favoritos (pull-to-refresh)
-   * Chamado quando usuário arrasta a tela para baixo
-   */
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadItems();
-    await loadMyItems();
-    await loadFavorites();
-    setRefreshing(false);
-  };
+  }, []); // Array vazio = executa uma única vez
 
   /**
    * Alterna entre mostrar todos os itens e apenas os meus itens
    */
   const toggleView = () => {
     setShowingMyItems(!showingMyItems);
+    handleCategoryFilter(null); // Reseta filtro de categoria ao alternar view
   };
+
+
 
   /**
    * Navega para tela de detalhes do item
@@ -168,31 +102,6 @@ const StoreScreen = ({ navigation }) => {
    */
   const handleEditItem = (item) => {
     navigation.navigate('EditItem', { item });
-  };
-
-  /**
-   * Adiciona ou remove item dos favoritos
-   * @param {number} itemId - ID do item
-   * @param {boolean} isFavorite - Se já está favoritado
-   */
-  const handleFavorite = async (itemId, isFavorite) => {
-    try {
-      const response = await toggleFavorite(itemId, isFavorite);
-      
-      if (response.status === 200 || response.status === 201) {
-        // Atualiza a lista local de favoritos otimisticamente
-        if (isFavorite) {
-          // Remove dos favoritos
-          setFavorites(prev => prev.filter(id => id !== itemId));
-        } else {
-          // Adiciona aos favoritos
-          setFavorites(prev => [...prev, itemId]);
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao favoritar:', error);
-      Alert.alert('Erro', 'Não foi possível atualizar favorito');
-    }
   };
 
   const handleShare = async (item) => {
@@ -232,7 +141,7 @@ const StoreScreen = ({ navigation }) => {
             <View style={styles.actions}>
               <TouchableOpacity 
                 style={[styles.iconButton, favorites.includes(item.id) && styles.iconButtonActive]}
-                onPress={() => handleFavorite(item.id, favorites.includes(item.id))}
+                onPress={() => handleToggleFavorite(item.id)}
               >
                 <Text style={[styles.icon, favorites.includes(item.id) && styles.iconActive]}>
                   {favorites.includes(item.id) ? '♥' : '♡'}
@@ -319,13 +228,37 @@ const StoreScreen = ({ navigation }) => {
         <Text style={styles.searchIcon}>🔍</Text>
       </TouchableOpacity>
 
-      {/* Botão para alternar visualização */}
+      {/* Botão de favoritos */}
       <TouchableOpacity
-        style={[styles.toggleButton, { top: screenHeight * 0.05 }]}
+        style={[styles.heartButton, { top: screenHeight * 0.05 }]}
+        onPress={() => navigation.navigate('Favorites')}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.heartIcon}>♥</Text>
+        {favorites.length > 0 && (
+          <View style={styles.favoriteBadge}>
+            <Text style={styles.favoriteBadgeText}>{favorites.length}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      {/* Botão para alternar visualização - Melhorado com Label */}
+      <TouchableOpacity
+        style={[
+          styles.toggleButton, 
+          { top: screenHeight * 0.05 },
+          showingMyItems && styles.toggleButtonActive
+        ]}
         onPress={toggleView}
         activeOpacity={0.7}
       >
-        <Text style={styles.toggleIcon}>{showingMyItems ? '🏪' : '📦'}</Text>
+        <Text style={styles.toggleIcon}>{showingMyItems ? '📦' : '🏪'}</Text>
+        <Text style={[
+          styles.toggleLabel,
+          showingMyItems && styles.toggleLabelActive
+        ]}>
+          {showingMyItems ? 'Meus' : 'Todos'}
+        </Text>
       </TouchableOpacity>
 
       {/* Card branco com conteúdo */}
@@ -334,15 +267,108 @@ const StoreScreen = ({ navigation }) => {
         contentContainerStyle={[styles.scrollContainer, { paddingTop: screenHeight * 0.18 }]}
       >
         <View style={styles.contentCard}>
-          {/* Info bar */}
+          {/* Info bar com contagem e resumo */}
           <View style={styles.infoBar}>
             <Text style={styles.infoText}>
-              {showingMyItems ? '📦 Meus Itens' : '🏪 Todos os Itens'} ({showingMyItems ? myItems.length : items.length})
+              {showingMyItems ? '📦 Meus Itens' : '🏪 Todos os Itens'} ({filteredItems.length})
             </Text>
+            {showingMyItems && getRentedCount() > 0 && (
+              <View style={styles.rentedBadge}>
+                <Text style={styles.rentedBadgeText}>
+                  {getRentedCount()} alugados
+                </Text>
+              </View>
+            )}
           </View>
 
+          {/* Chips de categoria rápidos */}
+          {showingMyItems && myItems.length > 0 && (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoryChipsContainer}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.categoryChip,
+                  selectedCategory === null && styles.categoryChipActive
+                ]}
+                onPress={() => handleCategoryFilter(null)}
+              >
+                <Text style={[
+                  styles.categoryChipText,
+                  selectedCategory === null && styles.categoryChipTextActive
+                ]}>
+                  Todos
+                </Text>
+              </TouchableOpacity>
+
+              {getCategories().map(category => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryChip,
+                    selectedCategory === category && styles.categoryChipActive
+                  ]}
+                  onPress={() => handleCategoryFilter(category)}
+                >
+                  <Text style={[
+                    styles.categoryChipText,
+                    selectedCategory === category && styles.categoryChipTextActive
+                  ]}>
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
+          {items.length === 0 && !showingMyItems && (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoryChipsContainer}
+            >
+              <TouchableOpacity
+                style={[
+                  styles.categoryChip,
+                  selectedCategory === null && styles.categoryChipActive
+                ]}
+                onPress={() => {
+                  setSelectedCategory(null);
+                  setFilteredItems(items);
+                }}
+              >
+                <Text style={[
+                  styles.categoryChipText,
+                  selectedCategory === null && styles.categoryChipTextActive
+                ]}>
+                  Todos
+                </Text>
+              </TouchableOpacity>
+
+              {getCategories().map(category => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.categoryChip,
+                    selectedCategory === category && styles.categoryChipActive
+                  ]}
+                  onPress={() => handleCategoryFilter(category)}
+                >
+                  <Text style={[
+                    styles.categoryChipText,
+                    selectedCategory === category && styles.categoryChipTextActive
+                  ]}>
+                    {category}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+
           {/* Lista de Items */}
-          {(showingMyItems ? myItems : items).length === 0 ? (
+          {filteredItems.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>📭</Text>
               <Text style={styles.emptyTitle}>Nenhum item encontrado</Text>
@@ -354,11 +380,12 @@ const StoreScreen = ({ navigation }) => {
               </Text>
             </View>
           ) : (
-            (showingMyItems ? myItems : items).map((item) => {
+            (filteredItems).map((item) => {
               const isMyItem = showingMyItems;
               const hasActiveRental = item.activeRental;
               const isRented = item.status === 'rented' || hasActiveRental;
               const isAvailable = item.status === 'available' && !hasActiveRental;
+              const isNew = isNewItem(item.publishDate);
               
               return (
                 <TouchableOpacity 
@@ -369,25 +396,53 @@ const StoreScreen = ({ navigation }) => {
                 >
                   {/* Imagem do Item */}
                   {getItemImage(item.photos) && (
-                    <Image 
-                      source={getItemImage(item.photos)} 
-                      style={styles.itemImage}
-                      resizeMode="cover"
-                    />
+                    <View style={styles.imageContainer}>
+                      <Image 
+                        source={getItemImage(item.photos)} 
+                        style={styles.itemImage}
+                        resizeMode="cover"
+                      />
+                      
+                      {/* Badge "NOVO" se item foi publicado a menos de 7 dias */}
+                      {isNew && (
+                        <View style={styles.newBadge}>
+                          <Text style={styles.newBadgeText}>✨ NOVO</Text>
+                        </View>
+                      )}
+                      
+                      {/* Badge de status */}
+                      <View style={[
+                        styles.statusBadge,
+                        isRented && styles.statusBadgeRented
+                      ]}>
+                        <Text style={styles.statusBadgeText}>
+                          {isRented ? '🔴 ALUGADO' : '🟢 DISPONÍVEL'}
+                        </Text>
+                      </View>
+                    </View>
                   )}
                   
                   <View style={styles.itemContent}>
                     <View style={styles.itemHeader}>
                       <Text style={styles.itemTitle}>{item.title}</Text>
-                      <Text style={[
-                        styles.itemStatus,
-                        isRented && styles.itemStatusRented
-                      ]}>
-                        {isRented ? 'ALUGADO' : 'DISPONÍVEL'}
-                      </Text>
                     </View>
                     
-                    <Text style={styles.itemPrice}>R$ {item.priceDaily?.toFixed(2)}/dia</Text>
+                    <View style={styles.priceAndFavoriteRow}>
+                      <Text style={styles.itemPrice}>R$ {item.priceDaily?.toFixed(2)}/dia</Text>
+                      {!isMyItem && (
+                        <TouchableOpacity 
+                          style={[styles.favoriteButton, favorites.includes(item.id) && styles.favoriteButtonActive]}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleToggleFavorite(item.id);
+                          }}
+                        >
+                          <Text style={[styles.favoriteIcon, favorites.includes(item.id) && styles.favoriteIconActive]}>
+                            {favorites.includes(item.id) ? '♥' : '♡'}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                     
                     <View style={styles.itemDetails}>
                       <View style={styles.itemBadge}>
@@ -420,19 +475,6 @@ const StoreScreen = ({ navigation }) => {
                     {item.location && (
                       <View style={styles.locationRow}>
                         <Text style={styles.itemLocation}>📍 {item.location}</Text>
-                        {!isMyItem && (
-                          <TouchableOpacity 
-                            style={[styles.favoriteButton, favorites.includes(item.id) && styles.favoriteButtonActive]}
-                            onPress={(e) => {
-                              e.stopPropagation();
-                              handleFavorite(item.id, favorites.includes(item.id));
-                            }}
-                          >
-                            <Text style={[styles.favoriteIcon, favorites.includes(item.id) && styles.favoriteIconActive]}>
-                              {favorites.includes(item.id) ? '♥' : '♡'}
-                            </Text>
-                          </TouchableOpacity>
-                        )}
                       </View>
                     )}
                   </View>
@@ -480,41 +522,85 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     position: 'absolute',
-    right: 20,
+    right: 15,
     width: 45,
     height: 45,
     borderRadius: 23,
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
+    boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.15)',
     elevation: 5,
     zIndex: 999,
   },
   searchIcon: {
     fontSize: 20,
   },
-  toggleButton: {
+  heartButton: {
     position: 'absolute',
-    right: 75,
+    right: 70,
     width: 45,
     height: 45,
     borderRadius: 23,
     backgroundColor: COLORS.white,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
+    boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.15)',
     elevation: 5,
     zIndex: 999,
   },
+  heartIcon: {
+    fontSize: 20,
+    color: '#FF4444',
+  },
+  favoriteBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.white,
+  },
+  favoriteBadgeText: {
+    fontSize: 10,
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  toggleButton: {
+    position: 'absolute',
+    right: 125,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#E8F9F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.15)',
+    elevation: 5,
+    zIndex: 999,
+    borderWidth: 2,
+    borderColor: '#D0E8E3',
+  },
+  toggleButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
   toggleIcon: {
     fontSize: 20,
+  },
+  toggleLabel: {
+    fontSize: 9,
+    color: COLORS.darkText,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  toggleLabelActive: {
+    color: COLORS.white,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -551,10 +637,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: 20,
     marginBottom: 20,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    boxShadow: '0px 3px 8px rgba(0, 0, 0, 0.15)',
     elevation: 4,
     overflow: 'hidden',
   },
@@ -625,6 +708,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
   },
+  priceAndFavoriteRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   itemDetails: {
     flexDirection: 'row',
     marginBottom: 12,
@@ -652,7 +741,6 @@ const styles = StyleSheet.create({
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: 8,
   },
   itemLocation: {
@@ -660,6 +748,40 @@ const styles = StyleSheet.create({
     color: '#888',
     fontWeight: '500',
     flex: 1,
+  },
+  favoriteButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.lightGray,
+  },
+  favoriteButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.lightGray,
+  },
+  favoriteButtonActive: {
+    backgroundColor: '#FFE5E5',
+    borderColor: '#FF4444',
+  },
+  favoriteIcon: {
+    fontSize: 20,
+    color: COLORS.darkText,
+  },
+  favoriteIconActive: {
+    color: '#FF4444',
+  },
+  favoriteButtonLabel: {
+    fontSize: 13,
+    color: COLORS.darkText,
+    fontWeight: '600',
   },
   rentalInfo: {
     backgroundColor: '#FFF8E1',
@@ -692,28 +814,6 @@ const styles = StyleSheet.create({
     color: '#888',
     fontWeight: '500',
   },
-  favoriteButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.lightGray,
-    marginLeft: 12,
-  },
-  favoriteButtonActive: {
-    backgroundColor: '#FFE5E5',
-    borderColor: '#FF4444',
-  },
-  favoriteIcon: {
-    fontSize: 24,
-    color: COLORS.darkText,
-  },
-  favoriteIconActive: {
-    color: '#FF4444',
-  },
   emptyContainer: {
     alignItems: 'center',
     paddingVertical: 80,
@@ -745,13 +845,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
+    boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.3)',
+    boxShadowOffset: {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
+    boxShadowOpacity: 0.3,
+    boxShadowRadius: 4.65,
     elevation: 8,
   },
   fabButtonText: {
@@ -759,6 +859,99 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: 'bold',
     lineHeight: 32,
+  },
+  
+  // Novos estilos - Melhorias de qualidade de vida
+  categoryChipsContainer: {
+    marginBottom: 20,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#F0FFF0',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  categoryChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#E8F9F5',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  categoryChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  categoryChipText: {
+    fontSize: 13,
+    color: COLORS.darkText,
+    fontWeight: '600',
+  },
+  categoryChipTextActive: {
+    color: COLORS.white,
+  },
+  
+  rentedBadge: {
+    backgroundColor: '#FFE5E5',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FF6B6B',
+  },
+  rentedBadgeText: {
+    fontSize: 12,
+    color: '#FF6B6B',
+    fontWeight: '700',
+  },
+  
+  imageContainer: {
+    position: 'relative',
+    width: '100%',
+    height: 220,
+  },
+  
+  newBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    boxShadowColor: '#000',
+    boxShadowOffset: { width: 0, height: 2 },
+    boxShadowOpacity: 0.25,
+    boxShadowRadius: 3,
+    elevation: 4,
+  },
+  newBadgeText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  
+  statusBadge: {
+    position: 'absolute',
+    bottom: 12,
+    left: 12,
+    backgroundColor: '#E8F9F5',
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  statusBadgeRented: {
+    backgroundColor: '#FFE5E5',
+    borderColor: '#FF6B6B',
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: COLORS.primary,
   },
 });
 

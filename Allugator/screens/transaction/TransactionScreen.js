@@ -81,6 +81,13 @@ const TransactionScreen = ({ navigation }) => {
   // Atualiza quando a tab é clicada
   useFocusEffect(
     useCallback(() => {
+      // Reseta para a aba inicial "Meus Itens"
+      setSelectedTab('myItems');
+      
+      // Limpa mensagens anteriores
+      setMessage('');
+      
+      // Recarrega dados
       loadTransactions();
     }, [])
   );
@@ -634,10 +641,7 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     backgroundColor: COLORS.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   tabIcon: {
@@ -681,10 +685,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
     minHeight: Dimensions.get('window').height * 0.85,
     marginTop: -50,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    boxShadow: '0px -2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 5,
   },
   
@@ -694,10 +695,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 15,
     marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.05)',
     elevation: 2,
   },
   itemContent: {
@@ -890,10 +888,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
+    boxShadow: '0px 4px 4.65px rgba(0, 0, 0, 0.3)',
     elevation: 8,
   },
   fabButtonText: {
@@ -921,10 +916,7 @@ const styles = StyleSheet.create({
     padding: 24,
     width: '80%',
     maxWidth: 350,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
     elevation: 10,
   },
   deleteModalTitle: {

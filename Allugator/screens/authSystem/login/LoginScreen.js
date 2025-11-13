@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, StatusBar, TouchableOpacity, ScrollView, Dimens
 import CustomButton from '../../../components/CustomButton/CustomButton';
 import CustomTextInput from '../../../components/CustomTextInput/CustomTextInput';
 import MessageDisplay from '../../../components/MessageDisplay/MessageDisplay';
-import { login } from '../../../apis/AuthApi';
-import AuthStorage from '../../../services/AuthStorage'; 
+import { useAuth } from '../../../hooks/useAuth';
 
 const COLORS = {
   background: '#F0FFF0',
@@ -21,6 +20,9 @@ const LoginScreen = ({ navigation }) => {
   const [feedback, setFeedback] = useState({ message: '', type: '' });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
+  // ✅ Novo: Hook do AuthContext
+  const { login, loading } = useAuth();
+
   const handleLogin = async () => {
     try {
       if (!email || !password) {
@@ -31,25 +33,25 @@ const LoginScreen = ({ navigation }) => {
         return;
       }
 
-      // Chama a função da API para fazer login
-      const response = await login(email, password);
+      // ✅ Novo: Usa o método do contexto (que já gerencia AsyncStorage)
+      const result = await login(email, password);
       
-      // Salva o token e os dados do usuário
-      if (response.token) {
-        await AuthStorage.saveToken(response.token);
-        await AuthStorage.saveUser(response.user);
+      if (result.success) {
+        setFeedback({
+          message: result.message,
+          type: 'success'
+        });
+
+        // Navega automaticamente após sucesso
+        setTimeout(() => {
+          navigation.replace('MainTabs');
+        }, 1500);
+      } else {
+        setFeedback({
+          message: result.message,
+          type: 'error'
+        });
       }
-      
-      setFeedback({
-        message: 'Login realizado com sucesso!',
-        type: 'success'
-      });
-
-      
-      setTimeout(() => {
-        navigation.replace('MainTabs'); 
-      }, 1500);
-
     } catch (error) {
       setFeedback({
         message: error.message || 'E-mail ou senha inválidos.',
@@ -77,6 +79,7 @@ const LoginScreen = ({ navigation }) => {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            editable={!loading}
           />
 
           <CustomTextInput
@@ -87,16 +90,27 @@ const LoginScreen = ({ navigation }) => {
             secureTextEntry={!isPasswordVisible}
             icon={isPasswordVisible ? '👁️' : '👁️‍🗨️'}
             onIconPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            editable={!loading}
           />
 
-          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotPasswordContainer}>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('ForgotPassword')}
+            style={styles.forgotPasswordContainer}
+            disabled={loading}
+          >
             <Text style={styles.forgotPasswordText}>Esqueceu a senha?</Text>
           </TouchableOpacity>
 
           <CustomButton
-            title="Entrar"
+            title={loading ? 'Entrando...' : 'Entrar'}
             onPress={handleLogin}
-            style={{ backgroundColor: COLORS.primary, marginTop: 20, width: '100%' }}
+            style={{ 
+              backgroundColor: COLORS.primary, 
+              marginTop: 20, 
+              width: '100%',
+              opacity: loading ? 0.6 : 1,
+            }}
+            disabled={loading}
           />
 
           <View style={styles.footer}>
