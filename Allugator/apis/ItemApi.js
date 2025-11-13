@@ -135,4 +135,31 @@ const searchItems = async (filters) => {
   }
 };
 
-export { getAllItems, getItemById, createItem, searchItems };
+/**
+ * Função para buscar todos os itens do usuário logado
+ * @returns {Promise<Object>} Lista de itens do usuário
+ */
+const getMyItems = async () => {
+  try {
+    const headers = await getAuthHeaders();
+    
+    // Usa a rota que retorna informações do aluguel ativo
+    const response = await fetch(`${API_URL}/my-items-with-rentals`, {
+      method: 'GET',
+      headers,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Falha ao buscar seus itens');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar seus itens:', error);
+    throw error;
+  }
+};
+
+export { getAllItems, getItemById, createItem, searchItems, getMyItems };

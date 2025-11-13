@@ -13,12 +13,23 @@ import { getRentalById, confirmPickup, confirmReturn } from '../../../apis/Renta
 import imageMap from '../../../assets/images/imageMap';
 
 const RentalTrackingScreen = ({ route, navigation }) => {
-    const { rentalId } = route.params;
+    const { rentalId, isNewRental } = route.params;
     const [rental, setRental] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadRentalDetails();
+        
+        // Mostra mensagem de sucesso se for um novo aluguel
+        if (isNewRental) {
+            setTimeout(() => {
+                Alert.alert(
+                    '🎉 Pagamento Confirmado!',
+                    'Seu aluguel foi realizado com sucesso. Você pode acompanhar o status aqui.',
+                    [{ text: 'OK' }]
+                );
+            }, 500);
+        }
     }, []);
 
     const loadRentalDetails = async () => {

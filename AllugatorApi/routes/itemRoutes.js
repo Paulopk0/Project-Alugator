@@ -11,6 +11,7 @@ router.get('/items/:id', itemController.getItemById.bind(itemController));
 // Rotas protegidas (requerem autenticação)
 router.post('/items', authenticateToken, itemController.createItem.bind(itemController));
 router.get('/my-items', authenticateToken, itemController.getMyItems.bind(itemController));
+router.get('/my-items-with-rentals', authenticateToken, itemController.getMyItemsWithRentals.bind(itemController));
 router.put('/items/:id', authenticateToken, itemController.updateItem.bind(itemController));
 router.delete('/items/:id', authenticateToken, itemController.deleteItem.bind(itemController));
 

@@ -174,6 +174,31 @@ class ItemController {
     }
 
     /**
+     * Lista todos os itens do usuário autenticado com informações de aluguel
+     * 
+     * @route GET /api/my-items-with-rentals
+     * @auth Requer autenticação JWT
+     * @access Private
+     * 
+     * @returns {Object} 200 - Lista de itens do usuário com info de quem está alugando
+     * @returns {Object} 401 - Não autenticado
+     * @returns {Object} 500 - Erro interno do servidor
+     */
+    async getMyItemsWithRentals(req, res) {
+        try {
+            const ownerId = req.user.id; // ID extraído do JWT
+            const result = await itemService.getItemsByOwnerWithRentals(ownerId);
+            res.status(result.status).json(result);
+        } catch (error) {
+            const status = error.status || 500;
+            res.status(status).json({
+                status,
+                message: error.message || 'Erro ao buscar seus itens'
+            });
+        }
+    }
+
+    /**
      * Atualiza um item
      */
     async updateItem(req, res) {

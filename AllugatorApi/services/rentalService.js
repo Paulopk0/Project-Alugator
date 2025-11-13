@@ -299,6 +299,7 @@ const confirmReturn = (rentalId) => {
     return new Promise((resolve, reject) => {
         db.get('SELECT * FROM rentals WHERE id = ?', [rentalId], (err, rental) => {
             if (err) {
+                console.error('Erro ao buscar rental:', err);
                 return reject(err);
             }
             if (!rental) {
@@ -312,6 +313,7 @@ const confirmReturn = (rentalId) => {
             const updateRentalQuery = `UPDATE rentals SET status = 'completed', updatedAt = CURRENT_TIMESTAMP WHERE id = ?`;
             db.run(updateRentalQuery, [rentalId], (updateErr) => {
                 if (updateErr) {
+                    console.error('Erro ao atualizar rental:', updateErr);
                     return reject(updateErr);
                 }
                 
@@ -332,6 +334,47 @@ const confirmReturn = (rentalId) => {
     });
 };
 
+/**
+ * getMyRentedOutItems - Busca itens do usuário que estão sendo alugados por outros
+ * 
+ * Retorna lista de aluguéis onde o usuário é o DONO do item (ownerId),
+ * não o locatário (renterId).
+ * 
+ * @param {number} userId - ID do usuário dono dos itens
+ * @returns {Promise<Object>} Status 200 com array de aluguéis
+ */
+const getMyRentedOutItems = (userId) => {
+    return new Promise((resolve, reject) => {
+        const query = `
+            SELECT 
+                r.*,
+                i.title as itemTitle,
+                i.photos as itemPhoto,
+                i.description as itemDescription,
+                i.category as itemCategory,
+                u.name as renterName,
+                u.email as renterEmail
+            FROM rentals r
+            JOIN items i ON r.itemId = i.id
+            JOIN users u ON r.renterId = u.id
+            WHERE i.ownerId = ?
+            ORDER BY r.createdAt DESC
+        `;
+        
+        db.all(query, [userId], (err, rows) => {
+            if (err) {
+                console.error('Erro ao buscar itens alugados:', err);
+                reject(err);
+            } else {
+                resolve({
+                    status: 200,
+                    rentals: rows
+                });
+            }
+        });
+    });
+};
+
 module.exports = {
     createRental,
     getUserRentals,
@@ -340,5 +383,6 @@ module.exports = {
     completeRental,
     cancelRental,
     confirmPickup,
-    confirmReturn
+    confirmReturn,
+    getMyRentedOutItems
 };

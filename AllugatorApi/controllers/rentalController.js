@@ -159,6 +159,22 @@ const confirmReturn = async (req, res) => {
     }
 };
 
+// Buscar itens do usuário que estão sendo alugados por outros
+const getMyRentedOutItems = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const result = await rentalService.getMyRentedOutItems(userId);
+        res.status(result.status).json(result);
+    } catch (error) {
+        console.error('Erro ao buscar itens alugados:', error);
+        res.status(500).json({
+            status: 500,
+            message: 'Erro interno do servidor',
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     createRental,
     getUserRentals,
@@ -167,5 +183,6 @@ module.exports = {
     completeRental,
     cancelRental,
     confirmPickup,
-    confirmReturn
+    confirmReturn,
+    getMyRentedOutItems
 };

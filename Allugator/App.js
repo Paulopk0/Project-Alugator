@@ -20,12 +20,15 @@ import TransactionScreen from './screens/transaction/TransactionScreen';
 import PerfilScreen from './screens/perfil/PerfilScreen';
 import ItemDetailsScreen from './screens/storeSystem/itemDetails/ItemDetailsScreen';
 import PaymentScreen from './screens/transaction/payment/PaymentScreen';
+import ProcessingPaymentScreen from './screens/transaction/processingPayment/ProcessingPaymentScreen';
 import RentalTrackingScreen from './screens/transaction/rentalTracking/RentalTrackingScreen';
 import AddItemScreen from './screens/storeSystem/addItem/AddItemScreen';
+import EditItemScreen from './screens/storeSystem/editItem/EditItemScreen';
 
 const Stack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
 const StoreStack = createNativeStackNavigator();
+const TransactionStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // Stack Navigator para Auth, Login, Register e ForgotPassword
@@ -97,6 +100,14 @@ function StoreNavigator() {
         }}
       />
       <StoreStack.Screen 
+        name="ProcessingPayment" 
+        component={ProcessingPaymentScreen}
+        options={{
+          animation: 'fade',
+          gestureEnabled: false, // Impede voltar durante processamento
+        }}
+      />
+      <StoreStack.Screen 
         name="RentalTracking" 
         component={RentalTrackingScreen}
         options={{
@@ -111,6 +122,13 @@ function StoreNavigator() {
         }}
       />
       <StoreStack.Screen 
+        name="EditItem" 
+        component={EditItemScreen}
+        options={{
+          animation: 'slide_from_right'
+        }}
+      />
+      <StoreStack.Screen 
         name="Calendar" 
         component={CalendarScreen}
         options={{
@@ -119,6 +137,33 @@ function StoreNavigator() {
         }}
       />
     </StoreStack.Navigator>
+  );
+}
+
+// Stack Navigator para Transaction
+function TransactionNavigator() {
+  return (
+    <TransactionStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#F0FFF0' }
+      }}
+    >
+      <TransactionStack.Screen 
+        name="TransactionMain" 
+        component={TransactionScreen}
+        options={{
+          animation: 'slide_from_right'
+        }}
+      />
+      <TransactionStack.Screen 
+        name="EditItem" 
+        component={EditItemScreen}
+        options={{
+          animation: 'slide_from_right'
+        }}
+      />
+    </TransactionStack.Navigator>
   );
 }
 
@@ -173,7 +218,7 @@ function MainTabNavigator() {
       />
       <Tab.Screen 
         name="Transaction" 
-        component={TransactionScreen}
+        component={TransactionNavigator}
         options={{
           tabBarLabel: 'Transações',
           tabBarIcon: ({ color, size }) => (

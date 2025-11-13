@@ -10,7 +10,7 @@
  * - Adicionar novos itens (via botão FAB)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -24,8 +24,10 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { getAllItems } from '../../../apis/ItemApi';
 import { getFavoriteIds, toggleFavorite } from '../../../apis/FavoriteApi';
+import { getMyItemsWithRentals } from '../../../apis/ItemManagementApi';
 import { getItemImage } from '../../../assets/images/imageMap';
 import AuthStorage from '../../../services/AuthStorage';
 import { translateItemStatus } from '../../../utils/translationHelpers';
@@ -46,10 +48,12 @@ const StoreScreen = ({ navigation }) => {
   
   // ESTADOS DO COMPONENTE
   const [items, setItems] = useState([]); // Lista de itens disponíveis
+  const [myItems, setMyItems] = useState([]); // Lista de meus itens com info de aluguel
   const [loading, setLoading] = useState(true); // Indicador de carregamento inicial
   const [refreshing, setRefreshing] = useState(false); // Indicador de refresh (pull-to-refresh)
   const [favorites, setFavorites] = useState([]); // IDs dos itens favoritados pelo usuário
   const [currentUser, setCurrentUser] = useState(null); // Dados do usuário logado
+  const [showingMyItems, setShowingMyItems] = useState(false); // Toggle entre todos os itens e meus itens
 
   /**
    * Hook de efeito - Executa ao montar o componente
@@ -58,8 +62,20 @@ const StoreScreen = ({ navigation }) => {
   useEffect(() => {
     loadUserData();
     loadItems();
+    loadMyItems();
     loadFavorites();
   }, []);
+
+  /**
+   * Hook de foco - Atualiza a página quando a tab é clicada
+   */
+  useFocusEffect(
+    useCallback(() => {
+      loadItems();
+      loadMyItems();
+      loadFavorites();
+    }, [])
+  );
 
   /**
    * Carrega dados do usuário logado do AsyncStorage
@@ -93,6 +109,18 @@ const StoreScreen = ({ navigation }) => {
   };
 
   /**
+   * Busca itens do usuário logado com informações de aluguel
+   */
+  const loadMyItems = async () => {
+    try {
+      const response = await getMyItemsWithRentals();
+      setMyItems(response.items || []);
+    } catch (error) {
+      console.error('Erro ao carregar meus itens:', error);
+    }
+  };
+
+  /**
    * Busca IDs dos itens favoritados pelo usuário
    * Usado para marcar corações como preenchidos
    */
@@ -114,8 +142,16 @@ const StoreScreen = ({ navigation }) => {
   const handleRefresh = async () => {
     setRefreshing(true);
     await loadItems();
+    await loadMyItems();
     await loadFavorites();
     setRefreshing(false);
+  };
+
+  /**
+   * Alterna entre mostrar todos os itens e apenas os meus itens
+   */
+  const toggleView = () => {
+    setShowingMyItems(!showingMyItems);
   };
 
   /**
@@ -124,6 +160,14 @@ const StoreScreen = ({ navigation }) => {
    */
   const handleItemPress = (item) => {
     navigation.navigate('ItemDetails', { item });
+  };
+
+  /**
+   * Navega para tela de edição do item
+   * @param {Object} item - Item a ser editado
+   */
+  const handleEditItem = (item) => {
+    navigation.navigate('EditItem', { item });
   };
 
   /**
@@ -275,6 +319,15 @@ const StoreScreen = ({ navigation }) => {
         <Text style={styles.searchIcon}>🔍</Text>
       </TouchableOpacity>
 
+      {/* Botão para alternar visualização */}
+      <TouchableOpacity
+        style={[styles.toggleButton, { top: screenHeight * 0.05 }]}
+        onPress={toggleView}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.toggleIcon}>{showingMyItems ? '🏪' : '📦'}</Text>
+      </TouchableOpacity>
+
       {/* Card branco com conteúdo */}
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -284,81 +337,108 @@ const StoreScreen = ({ navigation }) => {
           {/* Info bar */}
           <View style={styles.infoBar}>
             <Text style={styles.infoText}>
-              📦 {items.length} {items.length === 1 ? 'item disponível' : 'itens disponíveis'}
+              {showingMyItems ? '📦 Meus Itens' : '🏪 Todos os Itens'} ({showingMyItems ? myItems.length : items.length})
             </Text>
-            <TouchableOpacity onPress={handleRefresh}>
-              <Text style={styles.refreshText}>🔄 Atualizar</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Lista de Items */}
-          {items.length === 0 ? (
+          {(showingMyItems ? myItems : items).length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>📭</Text>
               <Text style={styles.emptyTitle}>Nenhum item encontrado</Text>
               <Text style={styles.emptySubtitle}>
-                Execute o seeder para adicionar items de exemplo
+                {showingMyItems 
+                  ? 'Você ainda não tem itens cadastrados'
+                  : 'Execute o seeder para adicionar items de exemplo'
+                }
               </Text>
             </View>
           ) : (
-            items.map((item) => (
-              <TouchableOpacity 
-                key={item.id} 
-                style={styles.itemContainer}
-                onPress={() => handleItemPress(item)}
-                activeOpacity={0.7}
-              >
-                {/* Imagem do Item */}
-                {getItemImage(item.photos) && (
-                  <Image 
-                    source={getItemImage(item.photos)} 
-                    style={styles.itemImage}
-                    resizeMode="cover"
-                  />
-                )}
-                
-                <View style={styles.itemContent}>
-                  <View style={styles.itemHeader}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    <Text style={styles.itemStatus}>{item.status}</Text>
-                  </View>
-                  
-                  <Text style={styles.itemPrice}>R$ {item.priceDaily?.toFixed(2)}/dia</Text>
-                  
-                  <View style={styles.itemDetails}>
-                    <View style={styles.itemBadge}>
-                      <Text style={styles.itemBadgeText}>{item.category}</Text>
-                    </View>
-                    <View style={styles.itemBadge}>
-                      <Text style={styles.itemBadgeText}>{item.condition}</Text>
-                    </View>
-                  </View>
-                  
-                  {item.description && (
-                    <Text style={styles.itemDescription} numberOfLines={2}>
-                      {item.description}
-                    </Text>
+            (showingMyItems ? myItems : items).map((item) => {
+              const isMyItem = showingMyItems;
+              const hasActiveRental = item.activeRental;
+              const isRented = item.status === 'rented' || hasActiveRental;
+              const isAvailable = item.status === 'available' && !hasActiveRental;
+              
+              return (
+                <TouchableOpacity 
+                  key={item.id} 
+                  style={styles.itemContainer}
+                  onPress={() => handleItemPress(item)}
+                  activeOpacity={0.7}
+                >
+                  {/* Imagem do Item */}
+                  {getItemImage(item.photos) && (
+                    <Image 
+                      source={getItemImage(item.photos)} 
+                      style={styles.itemImage}
+                      resizeMode="cover"
+                    />
                   )}
                   
-                  {item.location && (
-                    <View style={styles.locationRow}>
-                      <Text style={styles.itemLocation}>📍 {item.location}</Text>
-                      <TouchableOpacity 
-                        style={[styles.favoriteButton, favorites.includes(item.id) && styles.favoriteButtonActive]}
-                        onPress={(e) => {
-                          e.stopPropagation();
-                          handleFavorite(item.id, favorites.includes(item.id));
-                        }}
-                      >
-                        <Text style={[styles.favoriteIcon, favorites.includes(item.id) && styles.favoriteIconActive]}>
-                          {favorites.includes(item.id) ? '♥' : '♡'}
+                  <View style={styles.itemContent}>
+                    <View style={styles.itemHeader}>
+                      <Text style={styles.itemTitle}>{item.title}</Text>
+                      <Text style={[
+                        styles.itemStatus,
+                        isRented && styles.itemStatusRented
+                      ]}>
+                        {isRented ? 'ALUGADO' : 'DISPONÍVEL'}
+                      </Text>
+                    </View>
+                    
+                    <Text style={styles.itemPrice}>R$ {item.priceDaily?.toFixed(2)}/dia</Text>
+                    
+                    <View style={styles.itemDetails}>
+                      <View style={styles.itemBadge}>
+                        <Text style={styles.itemBadgeText}>{item.category}</Text>
+                      </View>
+                      <View style={styles.itemBadge}>
+                        <Text style={styles.itemBadgeText}>{item.condition}</Text>
+                      </View>
+                    </View>
+                    
+                    {item.description && (
+                      <Text style={styles.itemDescription} numberOfLines={2}>
+                        {item.description}
+                      </Text>
+                    )}
+                    
+                    {/* Se for meu item e estiver alugado, mostrar quem está alugando */}
+                    {isMyItem && hasActiveRental && (
+                      <View style={styles.rentalInfo}>
+                        <Text style={styles.rentalInfoTitle}>👤 Alugado por:</Text>
+                        <Text style={styles.rentalInfoName}>{item.activeRental.renter.name}</Text>
+                        <Text style={styles.rentalInfoEmail}>{item.activeRental.renter.email}</Text>
+                        <Text style={styles.rentalInfoDates}>
+                          📅 {new Date(item.activeRental.startDate).toLocaleDateString('pt-BR')} até{' '}
+                          {new Date(item.activeRental.endDate).toLocaleDateString('pt-BR')}
                         </Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))
+                      </View>
+                    )}
+                    
+                    {item.location && (
+                      <View style={styles.locationRow}>
+                        <Text style={styles.itemLocation}>📍 {item.location}</Text>
+                        {!isMyItem && (
+                          <TouchableOpacity 
+                            style={[styles.favoriteButton, favorites.includes(item.id) && styles.favoriteButtonActive]}
+                            onPress={(e) => {
+                              e.stopPropagation();
+                              handleFavorite(item.id, favorites.includes(item.id));
+                            }}
+                          >
+                            <Text style={[styles.favoriteIcon, favorites.includes(item.id) && styles.favoriteIconActive]}>
+                              {favorites.includes(item.id) ? '♥' : '♡'}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })
           )}
         </View>
       </ScrollView>
@@ -422,6 +502,25 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   searchIcon: {
+    fontSize: 20,
+  },
+  toggleButton: {
+    position: 'absolute',
+    right: 75,
+    width: 45,
+    height: 45,
+    borderRadius: 23,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 5,
+    zIndex: 999,
+  },
+  toggleIcon: {
     fontSize: 20,
   },
   scrollContainer: {
@@ -523,6 +622,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     textTransform: 'uppercase',
   },
+  itemStatusRented: {
+    color: '#FF6B6B',
+    backgroundColor: '#FFE5E5',
+  },
   itemPrice: {
     fontSize: 24,
     color: COLORS.primary,
@@ -564,6 +667,37 @@ const styles = StyleSheet.create({
     color: '#888',
     fontWeight: '500',
     flex: 1,
+  },
+  rentalInfo: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFC107',
+  },
+  rentalInfoTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: COLORS.darkText,
+    marginBottom: 6,
+  },
+  rentalInfoName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.darkText,
+    marginBottom: 2,
+  },
+  rentalInfoEmail: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 6,
+  },
+  rentalInfoDates: {
+    fontSize: 12,
+    color: '#888',
+    fontWeight: '500',
   },
   favoriteButton: {
     width: 48,

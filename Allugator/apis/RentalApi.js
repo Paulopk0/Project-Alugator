@@ -135,15 +135,39 @@ export const confirmPickup = async (rentalId) => {
 export const confirmReturn = async (rentalId) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/${rentalId}/return`, {
+    const url = `${API_URL}/${rentalId}/return`;
+    
+    const response = await fetch(url, {
       method: 'PUT',
+      headers
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Erro ao confirmar devolução');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Erro ao confirmar devolução:', error);
+    throw error;
+  }
+};
+
+// Buscar itens que o usuário colocou para alugar (e estão sendo alugados por outros)
+export const getMyRentedOutItems = async () => {
+  try {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_URL}/my-items`, {
+      method: 'GET',
       headers
     });
     
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Erro ao confirmar devolução:', error);
+    console.error('Erro ao buscar itens alugados:', error);
     throw error;
   }
 };
