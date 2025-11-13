@@ -10,7 +10,7 @@ const MessageDisplay = ({ message, type = 'error', onHide }) => {
       Animated.timing(opacity, {
         toValue: 1,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start();
 
       // Auto hide after 3 seconds
@@ -18,7 +18,7 @@ const MessageDisplay = ({ message, type = 'error', onHide }) => {
         Animated.timing(opacity, {
           toValue: 0,
           duration: 300,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }).start(() => onHide());
       }, 3000);
 

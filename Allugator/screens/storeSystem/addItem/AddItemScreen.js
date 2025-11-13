@@ -395,10 +395,7 @@ const styles = StyleSheet.create({
         paddingTop: 40,
         paddingHorizontal: 20,
         paddingBottom: 30,
-        shadowColor: COLORS.shadow,
-        shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
+        boxShadow: '0px -3px 10px rgba(0, 0, 0, 0.15)',
         elevation: 10,
     },
     inputGroup: {
@@ -445,13 +442,8 @@ const styles = StyleSheet.create({
         padding: 18,
         alignItems: 'center',
         marginTop: 20,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
+        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.25)',
+        boxShadowRadius: 3.84,
         elevation: 5,
     },
     submitButtonDisabled: {

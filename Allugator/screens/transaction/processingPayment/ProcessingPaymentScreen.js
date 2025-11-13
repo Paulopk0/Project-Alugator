@@ -58,12 +58,12 @@ const ProcessingPaymentScreen = ({ route, navigation }) => {
         Animated.timing(fadeAnim, {
           toValue: 1,
           duration: 1000,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
         Animated.timing(fadeAnim, {
           toValue: 0.3,
           duration: 1000,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }),
       ])
     ).start();
@@ -270,10 +270,10 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 30,
     paddingBottom: 40,
-    shadowColor: COLORS.darkText,
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
+    boxShadowColor: COLORS.darkText,
+    boxShadowOffset: { width: 0, height: -3 },
+    boxShadowOpacity: 0.15,
+    boxShadowRadius: 10,
     elevation: 10,
     alignItems: 'center',
   },
