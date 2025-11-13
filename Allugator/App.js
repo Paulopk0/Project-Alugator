@@ -157,8 +157,22 @@ function TransactionNavigator() {
         }}
       />
       <TransactionStack.Screen 
+        name="AddItem" 
+        component={AddItemScreen}
+        options={{
+          animation: 'slide_from_right'
+        }}
+      />
+      <TransactionStack.Screen 
         name="EditItem" 
         component={EditItemScreen}
+        options={{
+          animation: 'slide_from_right'
+        }}
+      />
+      <TransactionStack.Screen 
+        name="RentalTracking" 
+        component={RentalTrackingScreen}
         options={{
           animation: 'slide_from_right'
         }}

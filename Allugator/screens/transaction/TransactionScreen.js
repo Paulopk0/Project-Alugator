@@ -37,6 +37,7 @@ import { StatusBar } from 'expo-status-bar';
 import { getItemImage } from '../../assets/images/imageMap';
 import { getUserRentals, confirmReturn } from '../../apis/RentalApi';
 import { getMyItems } from '../../apis/ItemApi';
+import { deleteItem } from '../../apis/ItemManagementApi';
 import MessageDisplay from '../../components/MessageDisplay/MessageDisplay';
 
 // Paleta de cores do aplicativo
@@ -68,6 +69,9 @@ const TransactionScreen = ({ navigation }) => {
   // Estados para mensagens
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('error');
+  
+  // Estado para confirmação de delete
+  const [deleteConfirmation, setDeleteConfirmation] = useState(null);
 
   // Carrega dados ao montar o componente
   useEffect(() => {
@@ -126,6 +130,7 @@ const TransactionScreen = ({ navigation }) => {
             location: item.location,
             securityDeposit: item.securityDeposit,
             // Informações do aluguel ativo (se existir)
+            rentalId: item.activeRental?.id,
             renterName: item.activeRental?.renter?.name,
             renterEmail: item.activeRental?.renter?.email,
             rentalStartDate: item.activeRental?.startDate,
@@ -239,6 +244,46 @@ const TransactionScreen = ({ navigation }) => {
     }
   };
 
+  // Deleta um item
+  const handleDeleteItem = async (item) => {
+    // Abre o modal de confirmação
+    setDeleteConfirmation(item);
+  };
+
+  // Confirma e executa a deleção
+  const confirmDelete = async () => {
+    if (!deleteConfirmation) return;
+    
+    const item = deleteConfirmation;
+    
+    try {
+      const response = await deleteItem(item.id);
+      
+      // Verifica se a deleção foi bem-sucedida
+      if (response && (response.status === 200 || response.message === 'Item deletado com sucesso!' || response.success === true)) {
+        setMessage('Item excluído com sucesso!');
+        setMessageType('success');
+        setDeleteConfirmation(null);
+        await loadTransactions();
+      } else {
+        const errorMsg = response?.message || 'Erro ao excluir item';
+        setMessage(errorMsg);
+        setMessageType('error');
+        setDeleteConfirmation(null);
+      }
+    } catch (error) {
+      const errorMsg = 'Erro ao excluir item: ' + error.message;
+      setMessage(errorMsg);
+      setMessageType('error');
+      setDeleteConfirmation(null);
+    }
+  };
+
+  // Cancela a deleção
+  const cancelDelete = () => {
+    setDeleteConfirmation(null);
+  };
+
   const renderItemCard = (item) => {
     // Verifica se é um item (tem publishDate) ou um aluguel (tem rentedUntil)
     const isMyItem = item.publishDate !== undefined;
@@ -309,13 +354,33 @@ const TransactionScreen = ({ navigation }) => {
               {isUnavailable && <Text style={[styles.statusText, { color: COLORS.gray }]}>Indisponível</Text>}
             </View>
             
-            {/* Botão de Editar - só aparece quando disponível */}
+            {/* Botões quando disponível */}
             {isAvailable && (
+              <>
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => handleEditItem(item)}
+                >
+                  <Text style={styles.editButtonText}>✏️ Editar</Text>
+                </TouchableOpacity>
+
+                {/* Botão de Deletar - só aparece quando disponível */}
+                <TouchableOpacity 
+                  style={styles.deleteButton}
+                  onPress={() => handleDeleteItem(item)}
+                >
+                  <Text style={styles.deleteButtonText}>✕</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {/* Botão de Acompanhar quando alugado */}
+            {isRented && item.rentalId && (
               <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => handleEditItem(item)}
+                style={styles.trackButton}
+                onPress={() => navigation.navigate('RentalTracking', { rentalId: item.rentalId })}
               >
-                <Text style={styles.editButtonText}>✏️ Editar</Text>
+                <Text style={styles.trackButtonText}>📍 Acompanhar</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -330,8 +395,11 @@ const TransactionScreen = ({ navigation }) => {
 
         {isRental && isInUse && (
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.inUseButton}>
-              <Text style={styles.inUseButtonText}>Em Uso</Text>
+            <TouchableOpacity 
+              style={styles.inUseButton}
+              onPress={() => navigation.navigate('RentalTracking', { rentalId: item.rentalId })}
+            >
+              <Text style={styles.inUseButtonText}>📍 Acompanhar</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -472,6 +540,54 @@ const TransactionScreen = ({ navigation }) => {
           )}
         </View>
       </ScrollView>
+
+      {/* Mensagem de Sucesso/Erro */}
+      {message && (
+        <MessageDisplay 
+          message={message} 
+          type={messageType}
+          onClose={() => setMessage('')}
+        />
+      )}
+
+      {/* Modal de confirmação de delete */}
+      {deleteConfirmation && (
+        <View style={styles.deleteModalOverlay}>
+          <View style={styles.deleteModal}>
+            <Text style={styles.deleteModalTitle}>Excluir Item</Text>
+            <Text style={styles.deleteModalMessage}>
+              Tem certeza que deseja excluir "{deleteConfirmation.name}"? Esta ação não pode ser desfeita.
+            </Text>
+            
+            <View style={styles.deleteModalButtons}>
+              <TouchableOpacity 
+                style={styles.deleteModalCancelButton}
+                onPress={cancelDelete}
+              >
+                <Text style={styles.deleteModalCancelText}>Cancelar</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.deleteModalConfirmButton}
+                onPress={confirmDelete}
+              >
+                <Text style={styles.deleteModalConfirmText}>Excluir</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Botão flutuante para adicionar item — aparece apenas em 'Meus Itens' */}
+      {selectedTab === 'myItems' && (
+        <TouchableOpacity
+          style={styles.fabButton}
+          onPress={() => navigation.navigate('AddItem')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.fabButtonText}>+</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -681,6 +797,35 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.white,
   },
+
+  // Track Button (Acompanhar)
+  trackButton: {
+    flex: 1,
+    backgroundColor: '#4CAF50',
+    borderRadius: 25,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  trackButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.white,
+  },
+
+  // Delete Button
+  deleteButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.red,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.white,
+  },
   
   // Action Buttons
   actionButtons: {
@@ -734,6 +879,93 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
     textAlign: 'center',
     paddingHorizontal: 40,
+  },
+  fabButton: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  fabButtonText: {
+    fontSize: 32,
+    color: COLORS.white,
+    fontWeight: 'bold',
+    lineHeight: 32,
+  },
+
+  // Modal de confirmação de delete
+  deleteModalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  deleteModal: {
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 24,
+    width: '80%',
+    maxWidth: 350,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+  },
+  deleteModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.darkText,
+    marginBottom: 12,
+  },
+  deleteModalMessage: {
+    fontSize: 14,
+    color: COLORS.gray,
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  deleteModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  deleteModalCancelButton: {
+    flex: 1,
+    backgroundColor: COLORS.lightGray,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  deleteModalCancelText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.darkText,
+  },
+  deleteModalConfirmButton: {
+    flex: 1,
+    backgroundColor: COLORS.red,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  deleteModalConfirmText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.white,
   },
 });
 

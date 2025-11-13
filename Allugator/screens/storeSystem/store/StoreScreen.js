@@ -443,14 +443,7 @@ const StoreScreen = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      {/* Botão Flutuante para Adicionar Item */}
-      <TouchableOpacity
-        style={styles.fabButton}
-        onPress={() => navigation.navigate('AddItem')}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.fabButtonText}>+</Text>
-      </TouchableOpacity>
+      {/* Botão de adicionar removido — agora exibido em TransactionScreen quando em 'Meus Itens' */}
     </View>
   );
 };

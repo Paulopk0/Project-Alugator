@@ -137,15 +137,17 @@ const EditItemScreen = ({ route, navigation }) => {
       {/* Background verde com header */}
       <View style={[styles.background, { paddingTop: screenHeight * 0.02 }]}>
         <View style={styles.headerContent}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
           <Text style={styles.headerTitle}>Editar Item</Text>
         </View>
       </View>
+
+      {/* Botão de voltar (acima de tudo) */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backButtonText}>←</Text>
+      </TouchableOpacity>
 
       {/* Card branco com formulário */}
       <ScrollView
@@ -303,18 +305,16 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     paddingTop: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
+    position: 'absolute',
+    top: 15,
+    left: 20,
+    zIndex: 999,
+    padding: 5,
   },
   backButtonText: {
-    fontSize: 32,
+    fontSize: 28,
     color: COLORS.darkText,
     fontWeight: 'bold',
   },
