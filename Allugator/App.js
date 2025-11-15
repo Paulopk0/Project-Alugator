@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Import Contexts
 import { AuthProvider } from './contexts/AuthContext';
@@ -61,11 +62,15 @@ function AuthNavigator() {
 
 // Stack Navigator para Store, Search e Calendar
 function StoreNavigator() {
+  const insets = useSafeAreaInsets();
   return (
     <StoreStack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#F0FFF0' }
+        contentStyle: { 
+          backgroundColor: '#F0FFF0',
+          paddingBottom: 70 + insets.bottom // Espaço para a tab bar
+        }
       }}
     >
       <StoreStack.Screen 
@@ -153,11 +158,15 @@ function StoreNavigator() {
 
 // Stack Navigator para Transaction
 function TransactionNavigator() {
+  const insets = useSafeAreaInsets();
   return (
     <TransactionStack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#F0FFF0' }
+        contentStyle: { 
+          backgroundColor: '#F0FFF0',
+          paddingBottom: 70 + insets.bottom // Espaço para a tab bar
+        }
       }}
     >
       <TransactionStack.Screen 
@@ -194,6 +203,7 @@ function TransactionNavigator() {
 
 // Tab Navigator principal com Home, Store, Transaction e Perfil
 function MainTabNavigator() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -202,8 +212,8 @@ function MainTabNavigator() {
           backgroundColor: '#E8F5E9',
           borderTopLeftRadius: 30,
           borderTopRightRadius: 30,
-          height: 70,
-          paddingBottom: 10,
+          height: 70 + insets.bottom, // Ajusta altura para incluir safe area bottom
+          paddingBottom: 10 + insets.bottom,
           paddingTop: 10,
           position: 'absolute',
           elevation: 0,
@@ -267,36 +277,38 @@ function MainTabNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ItemProvider>
-        <RentalProvider>
-          <NavigationContainer>
-            <StatusBar style="auto" />
-          <Stack.Navigator
-            initialRouteName="Auth"
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: '#F0FFF0' }
-            }}
-          >
-          <Stack.Screen 
-            name="Auth" 
-            component={AuthNavigator}
-            options={{
-              headerShown: false
-            }}
-          />
-          <Stack.Screen 
-            name="MainTabs" 
-            component={MainTabNavigator}
-            options={{
-              headerShown: false
-            }}
-          />
-        </Stack.Navigator>
-          </NavigationContainer>
-        </RentalProvider>
-      </ItemProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <ItemProvider>
+          <RentalProvider>
+            <NavigationContainer>
+              <StatusBar style="auto" />
+            <Stack.Navigator
+              initialRouteName="Auth"
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: '#F0FFF0' }
+              }}
+            >
+            <Stack.Screen 
+              name="Auth" 
+              component={AuthNavigator}
+              options={{
+                headerShown: false
+              }}
+            />
+            <Stack.Screen 
+              name="MainTabs" 
+              component={MainTabNavigator}
+              options={{
+                headerShown: false
+              }}
+            />
+          </Stack.Navigator>
+            </NavigationContainer>
+          </RentalProvider>
+        </ItemProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
