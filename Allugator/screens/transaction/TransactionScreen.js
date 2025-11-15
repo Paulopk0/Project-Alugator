@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   headerContent: {
-    paddingTop: 60,
+    paddingTop: 100,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
@@ -684,7 +684,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 100,
     minHeight: Dimensions.get('window').height * 0.85,
-    marginTop: -50,
+    marginTop: -90,
     boxShadow: '0px -2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 5,
   },
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
   },
   fabButton: {
     position: 'absolute',
-    bottom: 90,
+    bottom: 20,
     right: 20,
     width: 60,
     height: 60,

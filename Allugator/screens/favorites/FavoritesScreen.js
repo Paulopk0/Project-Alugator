@@ -11,6 +11,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getUserFavorites, toggleFavorite } from '../../apis/FavoriteApi';
 import { getItemImage } from '../../assets/images/imageMap';
 
@@ -23,6 +24,7 @@ const COLORS = {
 };
 
 const FavoritesScreen = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -67,8 +69,7 @@ const FavoritesScreen = ({ navigation }) => {
   };
 
   const handleItemPress = (item) => {
-    // TODO: Navegar para detalhes do item
-    console.log('Item selecionado:', item.id);
+    navigation.navigate('ItemDetails', { item });
   };
 
   const formatPrice = (price) => {
@@ -86,11 +87,25 @@ const FavoritesScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Background verde */}
-      <View style={[styles.backgroundGreen, { height: screenHeight * 0.18 }]} />
+      <View style={styles.backgroundGreen}>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Meus Favoritos</Text>
+        </View>
+      </View>
+
+      {/* Botão de voltar (flutuante) */}
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backButtonText}>←</Text>
+      </TouchableOpacity>
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+        ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -102,18 +117,7 @@ const FavoritesScreen = ({ navigation }) => {
         }
       >
         {/* Card branco com conteúdo */}
-        <View style={[styles.contentCard, { minHeight: screenHeight * 0.82 }]}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.backButtonText}>←</Text>
-            </TouchableOpacity>
-            <Text style={styles.title}>Meus Favoritos</Text>
-            <View style={styles.placeholder} />
-          </View>
+        <View style={[styles.contentCard]}>
 
           {/* Contador de favoritos */}
           <View style={styles.counterContainer}>
@@ -209,47 +213,57 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    zIndex: 2,
+
   },
   scrollContent: {
     flexGrow: 1,
-    paddingTop: 20,
+    paddingTop: 180,
+    paddingBottom: 0,
+
   },
   contentCard: {
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 60,
     borderTopRightRadius: 60,
-    paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 400,
     boxShadow: '0px -2px 8px rgba(0, 0, 0, 0.1)',
+    alignSelf: 'stretch',
+    minHeight: 0,
     elevation: 5,
   },
-  header: {
-    flexDirection: 'row',
+  backgroundGreen: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 220,
+    backgroundColor: COLORS.primary,
+    zIndex: 0,
+  },
+  headerContent: {
+    paddingTop: 65,
+    paddingHorizontal: 20,
+    paddingBottom: 30,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: COLORS.darkText,
-  },
-  title: {
-    fontSize: 20,
+  headerTitle: {
+    fontSize: 28,
     fontWeight: 'bold',
     color: COLORS.darkText,
   },
-  placeholder: {
-    width: 40,
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 30,
+    zIndex: 999,
+    padding: 5,
+  },
+  backButtonText: {
+    fontSize: 28,
+    color: COLORS.darkText,
+    fontWeight: 'bold',
   },
   counterContainer: {
     marginBottom: 20,

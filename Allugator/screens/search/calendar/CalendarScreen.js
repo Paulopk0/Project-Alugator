@@ -164,7 +164,7 @@ const CalendarScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.primary,
   },
   background: {
     position: 'absolute',
@@ -172,19 +172,19 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: COLORS.primary,
-    zIndex: 1,
+    zIndex: 0,
   },
   headerContent: {
-    paddingTop: 15,
-    paddingBottom: 20,
+    paddingTop: 65,
+    paddingBottom: 30,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backButton: {
     position: 'absolute',
-    top: 15,
-    left: 20,
+    top: 60,
+    left: 40,
     zIndex: 999,
     padding: 5,
   },

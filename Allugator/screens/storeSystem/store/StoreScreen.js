@@ -221,7 +221,7 @@ const StoreScreen = ({ navigation }) => {
 
       {/* Botão de pesquisa separado (acima de tudo) */}
       <TouchableOpacity
-        style={[styles.searchButton, { top: screenHeight * 0.05 }]}
+        style={[styles.searchButton, { top: screenHeight * 0.08 }]}
         onPress={() => navigation.navigate('Search')}
         activeOpacity={0.7}
       >
@@ -230,7 +230,7 @@ const StoreScreen = ({ navigation }) => {
 
       {/* Botão de favoritos */}
       <TouchableOpacity
-        style={[styles.heartButton, { top: screenHeight * 0.05 }]}
+        style={[styles.heartButton, { top: screenHeight * 0.08 }]}
         onPress={() => navigation.navigate('Favorites')}
         activeOpacity={0.7}
       >
@@ -245,8 +245,8 @@ const StoreScreen = ({ navigation }) => {
       {/* Botão para alternar visualização - Melhorado com Label */}
       <TouchableOpacity
         style={[
-          styles.toggleButton, 
-          { top: screenHeight * 0.05 },
+          styles.toggleButton,
+          { top: screenHeight * 0.08 },
           showingMyItems && styles.toggleButtonActive
         ]}
         onPress={toggleView}
@@ -507,7 +507,7 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   headerContent: {
-    paddingTop: 10,
+    paddingTop: 40,
   },
   headerTitle: {
     fontSize: 32,

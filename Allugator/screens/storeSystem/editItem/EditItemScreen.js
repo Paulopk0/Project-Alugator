@@ -304,12 +304,15 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   headerContent: {
-    paddingTop: 10,
+    paddingTop: 55,
+    paddingBottom: 20,
+    alignItems: 'center',
+
   },
   backButton: {
     position: 'absolute',
-    top: 15,
-    left: 20,
+    top: 65,
+    left: 30,
     zIndex: 999,
     padding: 5,
   },
