@@ -1,6 +1,5 @@
 import AuthStorage from '../services/AuthStorage';
-
-const API_URL = 'http://localhost:3000/api';
+import API_URL from '../config/api';
 
 // Helper para obter headers com autenticação
 const getAuthHeaders = async () => {

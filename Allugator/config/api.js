@@ -1,0 +1,3 @@
+// Altere esta URL para o IP/host do seu backend
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+export default API_URL;

@@ -1,6 +1,8 @@
 import AuthStorage from '../services/AuthStorage';
+import API_URL from '../config/api';
 
-const API_URL = 'http://localhost:3000/api/rentals';
+// API_URL aqui já inclui `/api`, então adicionamos `/rentals`
+const API_RENTALS_URL = `${API_URL}/rentals`;
 
 // Helper para obter headers com autenticação
 const getAuthHeaders = async () => {
@@ -15,7 +17,7 @@ const getAuthHeaders = async () => {
 export const createRental = async (rentalData) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(API_URL, {
+    const response = await fetch(API_RENTALS_URL, {
       method: 'POST',
       headers,
       body: JSON.stringify(rentalData)
@@ -33,7 +35,7 @@ export const createRental = async (rentalData) => {
 export const getUserRentals = async () => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(API_URL, {
+    const response = await fetch(API_RENTALS_URL, {
       method: 'GET',
       headers
     });
@@ -50,7 +52,7 @@ export const getUserRentals = async () => {
 export const checkItemAvailability = async (itemId) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/check/${itemId}`, {
+    const response = await fetch(`${API_RENTALS_URL}/check/${itemId}`, {
       method: 'GET',
       headers
     });
@@ -67,7 +69,7 @@ export const checkItemAvailability = async (itemId) => {
 export const getRentalById = async (rentalId) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/${rentalId}`, {
+    const response = await fetch(`${API_RENTALS_URL}/${rentalId}`, {
       method: 'GET',
       headers
     });
@@ -84,7 +86,7 @@ export const getRentalById = async (rentalId) => {
 export const completeRental = async (rentalId) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/${rentalId}/complete`, {
+    const response = await fetch(`${API_RENTALS_URL}/${rentalId}/complete`, {
       method: 'PUT',
       headers
     });
@@ -101,7 +103,7 @@ export const completeRental = async (rentalId) => {
 export const cancelRental = async (rentalId) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/${rentalId}`, {
+    const response = await fetch(`${API_RENTALS_URL}/${rentalId}`, {
       method: 'DELETE',
       headers
     });
@@ -118,7 +120,7 @@ export const cancelRental = async (rentalId) => {
 export const confirmPickup = async (rentalId) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/${rentalId}/pickup`, {
+    const response = await fetch(`${API_RENTALS_URL}/${rentalId}/pickup`, {
       method: 'PUT',
       headers
     });
@@ -135,7 +137,7 @@ export const confirmPickup = async (rentalId) => {
 export const confirmReturn = async (rentalId) => {
   try {
     const headers = await getAuthHeaders();
-    const url = `${API_URL}/${rentalId}/return`;
+    const url = `${API_RENTALS_URL}/${rentalId}/return`;
     
     const response = await fetch(url, {
       method: 'PUT',
@@ -159,7 +161,7 @@ export const confirmReturn = async (rentalId) => {
 export const getMyRentedOutItems = async () => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/my-items`, {
+    const response = await fetch(`${API_RENTALS_URL}/my-items`, {
       method: 'GET',
       headers
     });
@@ -176,7 +178,7 @@ export const getMyRentedOutItems = async () => {
 export const getRentalHistory = async () => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/history`, {
+    const response = await fetch(`${API_RENTALS_URL}/history`, {
       method: 'GET',
       headers
     });
@@ -193,7 +195,7 @@ export const getRentalHistory = async () => {
 export const getRentalDetails = async (rentalId) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/${rentalId}/details`, {
+    const response = await fetch(`${API_RENTALS_URL}/${rentalId}/details`, {
       method: 'GET',
       headers
     });
@@ -210,7 +212,7 @@ export const getRentalDetails = async (rentalId) => {
 export const confirmPayment = async (rentalId, paymentData = {}) => {
   try {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/${rentalId}/payment`, {
+    const response = await fetch(`${API_RENTALS_URL}/${rentalId}/payment`, {
       method: 'POST',
       headers,
       body: JSON.stringify(paymentData)
@@ -229,7 +231,7 @@ export const checkItemAvailabilityByDates = async (itemId, startDate, endDate) =
   try {
     const headers = await getAuthHeaders();
     const response = await fetch(
-      `${API_URL}/check/${itemId}?startDate=${startDate}&endDate=${endDate}`, 
+      `${API_RENTALS_URL}/check/${itemId}?startDate=${startDate}&endDate=${endDate}`, 
       {
         method: 'GET',
         headers

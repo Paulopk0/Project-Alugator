@@ -11,7 +11,7 @@
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import AuthStorage from '../services/AuthStorage';
-import { login as loginAPI, logout as logoutAPI } from '../apis/AuthApi';
+import { login as loginAPI, logout as logoutAPI, register as registerAPI } from '../apis/AuthApi';
 
 export const AuthContext = createContext();
 
@@ -57,6 +57,8 @@ export function AuthProvider({ children }) {
       // Chama API de login
       const response = await loginAPI(email, password);
       
+      console.log('[AuthContext] Response do login:', response);
+      
       if (response.token && response.user) {
         // Salva no AsyncStorage
         await AuthStorage.saveToken(response.token);
@@ -68,6 +70,8 @@ export function AuthProvider({ children }) {
         setIsSignout(false);
         
         return { success: true, message: 'Login realizado com sucesso!' };
+      } else {
+        return { success: false, message: response.message || 'Erro ao fazer login' };
       }
     } catch (error) {
       console.error('Erro ao fazer login:', error);
@@ -117,7 +121,14 @@ export function AuthProvider({ children }) {
     try {
       setLoading(true);
       
-      const response = await loginAPI(email, password);
+      const response = await registerAPI({
+        name,
+        email,
+        password,
+        phoneNumber
+      });
+      
+      console.log('[AuthContext] Response do registro:', response);
       
       if (response.token && response.user) {
         await AuthStorage.saveToken(response.token);
@@ -128,6 +139,11 @@ export function AuthProvider({ children }) {
         setIsSignout(false);
         
         return { success: true, message: 'Cadastro realizado com sucesso!' };
+      } else if (response.userId) {
+        // Se apenas userId foi retornado, significa que foi criado com sucesso
+        return { success: true, message: 'Cadastro realizado com sucesso!' };
+      } else {
+        return { success: false, message: response.message || 'Erro ao registrar' };
       }
     } catch (error) {
       console.error('Erro ao registrar:', error);
