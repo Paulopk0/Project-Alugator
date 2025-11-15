@@ -67,11 +67,8 @@ const FavoritesScreen = ({ navigation }) => {
   };
 
   const handleItemPress = (item) => {
-    // Navega para a tela de detalhes do item
-    navigation.navigate('ItemDetails', {
-      itemId: item.id,
-      item: item
-    });
+    // TODO: Navegar para detalhes do item
+    console.log('Item selecionado:', item.id);
   };
 
   const formatPrice = (price) => {

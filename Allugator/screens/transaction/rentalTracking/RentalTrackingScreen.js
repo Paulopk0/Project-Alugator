@@ -393,7 +393,6 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingTop: 160,
         paddingBottom: 40,
-        minHeight: '100%',
     },
     
     // Card branco com conteúdo
@@ -403,8 +402,7 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 60,
         paddingTop: 30,
         paddingHorizontal: 20,
-        paddingBottom: 40,
-        minHeight: 700,
+        minHeight: 600,
         boxShadowColor: '#00000026',
         boxShadowOffset: { width: 0, height: -3 },
         boxShadowOpacity: 0.15,
