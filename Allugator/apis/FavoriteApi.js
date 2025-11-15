@@ -1,6 +1,5 @@
 import AuthStorage from '../services/AuthStorage';
-
-const API_URL = 'http://localhost:3000/api';
+import API_URL from '../config/api';
 
 /**
  * Retorna o header de autenticação com o token JWT

@@ -1,5 +1,7 @@
 import AuthStorage from '../services/AuthStorage';
-const API_URL = 'http://localhost:3000/api';
+import API_URL from '../config/api';
+
+console.log('[AuthApi] API_URL importado:', API_URL);
 
 /**
  * Função para obter headers com token de autenticação
@@ -20,6 +22,9 @@ const getAuthHeaders = async () => {
  */
 const login = async (email, password) => {
   try {
+    console.log(`[AuthApi] Tentando login com email: ${email}`);
+    console.log(`[AuthApi] URL da API: ${API_URL}/login`);
+    
     const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: {
@@ -28,15 +33,30 @@ const login = async (email, password) => {
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await response.json();
+    console.log(`[AuthApi] Response status: ${response.status}`);
+    console.log(`[AuthApi] Response headers:`, response.headers);
+    
+    const text = await response.text();
+    console.log(`[AuthApi] Response body (texto): ${text}`);
+    
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error(`[AuthApi] Erro ao fazer parse JSON:`, parseError);
+      console.error(`[AuthApi] Texto recebido:`, text);
+      throw new Error(`Servidor retornou resposta inválida: ${text.substring(0, 100)}`);
+    }
+
+    console.log(`[AuthApi] Data parseada (login):`, JSON.stringify(data, null, 2));
 
     if (!response.ok) {
       throw new Error(data.message || 'Falha no login');
     }
 
+    console.log(`[AuthApi] Login bem-sucedido, retornando:`, JSON.stringify(data, null, 2));
     return data;
   } catch (error) {
-    // Este console.error já existia, mas é muito importante.
     console.error('Erro no login:', error);
     throw error;
   }
@@ -53,6 +73,10 @@ const login = async (email, password) => {
  */
 const register = async (userData) => {
   try {
+    console.log(`[AuthApi] userData completo:`, userData);
+    console.log(`[AuthApi] Tentando registrar com email: ${userData.email}`);
+    console.log(`[AuthApi] URL da API: ${API_URL}/register`);
+    
     const response = await fetch(`${API_URL}/register`, {
       method: 'POST',
       headers: {
@@ -61,15 +85,29 @@ const register = async (userData) => {
       body: JSON.stringify(userData),
     });
 
-    const data = await response.json();
+    console.log(`[AuthApi] Response status: ${response.status}`);
+    
+    const text = await response.text();
+    console.log(`[AuthApi] Response body (texto): ${text}`);
+    
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      console.error(`[AuthApi] Erro ao fazer parse JSON:`, parseError);
+      console.error(`[AuthApi] Texto recebido:`, text);
+      throw new Error(`Servidor retornou resposta inválida: ${text.substring(0, 100)}`);
+    }
+
+    console.log(`[AuthApi] Data parseada:`, data);
 
     if (!response.ok) {
       throw new Error(data.message || 'Falha no registro');
     }
 
+    console.log(`[AuthApi] Registro bem-sucedido, retornando:`, data);
     return data;
   } catch (error) {
-    // Este console.error já existia.
     console.error('Erro no registro:', error);
     throw error;
   }

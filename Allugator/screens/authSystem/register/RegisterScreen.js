@@ -44,8 +44,10 @@ const RegisterScreen = ({ navigation }) => {
     }
 
     try {
+      console.log('[RegisterScreen] Dados para registro:', { name, email, password, phoneNumber });
       // ✅ Novo: Usa o método do contexto
       const result = await register(name, email, password, phoneNumber);
+      console.log('[RegisterScreen] Resultado do registro:', result);
 
       if (result.success) {
         setFeedback({ message: result.message, type: 'success' });
