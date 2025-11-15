@@ -250,6 +250,12 @@ function MainTabNavigator() {
             <Text style={{ fontSize: 24, color }}>🏪</Text>
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('Store', { screen: 'StoreMain' });
+          },
+        })}
       />
       <Tab.Screen 
         name="Transaction" 
@@ -260,6 +266,12 @@ function MainTabNavigator() {
             <Text style={{ fontSize: 24, color }}>🔄</Text>
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('Transaction', { screen: 'TransactionMain' });
+          },
+        })}
       />
       <Tab.Screen 
         name="Perfil" 
