@@ -269,7 +269,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 60,
     paddingTop: 50,
     paddingHorizontal: 30,
-    paddingBottom: 40,
     boxShadowColor: COLORS.darkText,
     boxShadowOffset: { width: 0, height: -3 },
     boxShadowOpacity: 0.15,

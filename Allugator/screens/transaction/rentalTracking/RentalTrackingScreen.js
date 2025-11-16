@@ -356,14 +356,14 @@ const styles = StyleSheet.create({
         top: 0,
         left: 0,
         right: 0,
-        height: 180,
+        height: 220,
         backgroundColor: '#1DE9B6',
         zIndex: 0,
     },
     headerContent: {
-        paddingTop: 60,
-        paddingHorizontal: 20,
-        paddingBottom: 20,
+        paddingTop: 65,
+        paddingHorizontal: 30,
+        paddingBottom: 30,
         alignItems: 'center',
     },
     headerTitle: {
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     // Botão de voltar (flutuante)
     backButton: {
         position: 'absolute',
-        top: 15,
+        top: 60,
         left: 20,
         zIndex: 999,
         padding: 5,
@@ -392,17 +392,18 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingTop: 160,
-        paddingBottom: 40,
+        flexGrow: 1,
     },
     
     // Card branco com conteúdo
     contentCard: {
+        flex: 1,
         backgroundColor: '#FFFFFF',
         borderTopLeftRadius: 60,
         borderTopRightRadius: 60,
-        paddingTop: 30,
+        paddingTop: 40,
         paddingHorizontal: 20,
-        minHeight: 600,
+        paddingBottom: 20,
         boxShadowColor: '#00000026',
         boxShadowOffset: { width: 0, height: -3 },
         boxShadowOpacity: 0.15,
@@ -419,15 +420,15 @@ const styles = StyleSheet.create({
         marginBottom: 30,
     },
     itemName: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         color: '#444444ff',
         marginBottom: 10,
-        alignSelf: 'flex-start',
+        textAlign: 'center',
     },
     itemImage: {
         width: '100%',
-        height: 150,
+        height: 250,
         marginTop: 10,
         borderRadius: 8,
     },

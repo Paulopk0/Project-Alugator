@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
         zIndex: 0,
     },
     headerContent: {
-        paddingTop: 15,
+        paddingTop: 60,
         paddingBottom: 20,
         paddingHorizontal: 20,
         alignItems: 'center',
@@ -371,8 +371,8 @@ const styles = StyleSheet.create({
     },
     backButton: {
         position: 'absolute',
-        top: 15,
-        left: 20,
+        top: 55,
+        left: 35,
         zIndex: 999,
         padding: 5,
     },

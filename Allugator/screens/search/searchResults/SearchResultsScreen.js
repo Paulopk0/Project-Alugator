@@ -42,11 +42,11 @@ const SearchResultsScreen = ({ navigation, route }) => {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: screenHeight * 0.18 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Card branco com conteúdo */}
-        <View style={[styles.contentCard, { minHeight: screenHeight * 0.82 }]}>
+        <View style={[styles.contentCard]}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Resultados da Busca</Text>
@@ -147,7 +147,7 @@ const SearchResultsScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.primary,
   },
   backgroundGreen: {
     position: 'absolute',
@@ -160,20 +160,22 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     zIndex: 2,
+    
   },
   scrollContent: {
     flexGrow: 1,
-    paddingTop: 20,
+    paddingTop: 40,
   },
   contentCard: {
     backgroundColor: COLORS.white,
     borderTopLeftRadius: 60,
     borderTopRightRadius: 60,
     paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 40,
+    paddingTop: 50,
+    paddingBottom: 400,
     boxShadow: '0px -2px 8px rgba(0, 0, 0, 0.1)',
     elevation: 5,
+
   },
   header: {
     alignItems: 'center',
@@ -182,8 +184,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 15,
-    left: 20,
+    top: 60,
+    left: 30,
     width: 40,
     height: 40,
     borderRadius: 20,

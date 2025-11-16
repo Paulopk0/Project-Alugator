@@ -8,7 +8,6 @@ import {
   StatusBar,
   Dimensions,
 } from 'react-native';
-import { Calendar } from 'react-native-calendars';
 
 const COLORS = {
   background: '#F0FFF0',
@@ -23,20 +22,34 @@ const CalendarScreen = ({ navigation, route }) => {
   const screenHeight = Dimensions.get('window').height;
   
   const [selected, setSelected] = useState('');
-  const [markedDates, setMarkedDates] = useState({});
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  const handleDayPress = (day) => {
-    setSelected(day.dateString);
-    
-    // Marcar a data selecionada
-    const newMarked = {
-      [day.dateString]: {
-        selected: true,
-        selectedColor: COLORS.primary,
-      },
-    };
-    setMarkedDates(newMarked);
+  const handleDayPress = (dateString) => {
+    setSelected(dateString);
   };
+
+  const generateCalendar = () => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+    const days = [];
+    const currentDate = new Date(startDate);
+
+    for (let i = 0; i < 42; i++) { // 6 semanas * 7 dias
+      days.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return days;
+  };
+
+  const days = generateCalendar();
+  const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
   return (
     <View style={styles.container}>
@@ -64,30 +77,54 @@ const CalendarScreen = ({ navigation, route }) => {
         <View style={[styles.contentCard, { minHeight: screenHeight * 0.82 }]}>
         {/* Calendário */}
         <View style={styles.calendarContainer}>
-          <Calendar
-            onDayPress={handleDayPress}
-            markedDates={markedDates}
-            theme={{
-              backgroundColor: COLORS.lightGreen,
-              calendarBackground: COLORS.lightGreen,
-              textSectionTitleColor: COLORS.darkText,
-              selectedDayBackgroundColor: COLORS.primary,
-              selectedDayTextColor: COLORS.white,
-              todayTextColor: COLORS.primary,
-              dayTextColor: COLORS.darkText,
-              textDisabledColor: '#d9e1e8',
-              arrowColor: COLORS.darkText,
-              monthTextColor: COLORS.darkText,
-              indicatorColor: COLORS.primary,
-              textDayFontWeight: '400',
-              textMonthFontWeight: 'bold',
-              textDayHeaderFontWeight: '500',
-              textDayFontSize: 14,
-              textMonthFontSize: 18,
-              textDayHeaderFontSize: 12,
-            }}
-            style={styles.calendar}
-          />
+          {/* Cabeçalho do mês */}
+          <View style={styles.monthHeader}>
+            <TouchableOpacity onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}>
+              <Text style={styles.arrow}>‹</Text>
+            </TouchableOpacity>
+            <Text style={styles.monthTitle}>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</Text>
+            <TouchableOpacity onPress={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}>
+              <Text style={styles.arrow}>›</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Dias da semana */}
+          <View style={styles.weekDays}>
+            {dayNames.map(day => (
+              <Text key={day} style={styles.weekDay}>{day}</Text>
+            ))}
+          </View>
+
+          {/* Dias do mês */}
+          <View style={styles.daysGrid}>
+            {days.map((day, index) => {
+              const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+              const isSelected = selected === day.toISOString().split('T')[0];
+              const isToday = day.toISOString().split('T')[0] === new Date().toISOString().split('T')[0];
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.day,
+                    !isCurrentMonth && styles.otherMonthDay,
+                    isSelected && styles.selectedDay,
+                    isToday && styles.today
+                  ]}
+                  onPress={() => handleDayPress(day.toISOString().split('T')[0])}
+                >
+                  <Text style={[
+                    styles.dayText,
+                    isSelected && styles.selectedDayText,
+                    isToday && styles.todayText,
+                    !isCurrentMonth && styles.otherMonthText
+                  ]}>
+                    {day.getDate()}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
 
         {/* Informações da data selecionada */}
@@ -95,7 +132,7 @@ const CalendarScreen = ({ navigation, route }) => {
           <View style={styles.selectedDateInfo}>
             <Text style={styles.selectedDateTitle}>Data Selecionada:</Text>
             <Text style={styles.selectedDate}>
-              {new Date(selected + 'T00:00:00').toLocaleDateString('pt-BR', {
+              {new Date(selected).toLocaleDateString('pt-BR', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -127,7 +164,7 @@ const CalendarScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.primary,
   },
   background: {
     position: 'absolute',
@@ -135,19 +172,19 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: COLORS.primary,
-    zIndex: 1,
+    zIndex: 0,
   },
   headerContent: {
-    paddingTop: 15,
-    paddingBottom: 20,
+    paddingTop: 65,
+    paddingBottom: 30,
     paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
   backButton: {
     position: 'absolute',
-    top: 15,
-    left: 20,
+    top: 60,
+    left: 40,
     zIndex: 999,
     padding: 5,
   },
@@ -180,9 +217,73 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.lightGreen,
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
+    padding: 15,
   },
-  calendar: {
-    borderRadius: 15,
+  monthHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  arrow: {
+    fontSize: 24,
+    color: COLORS.darkText,
+    fontWeight: 'bold',
+    paddingHorizontal: 10,
+  },
+  monthTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.darkText,
+  },
+  weekDays: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 10,
+  },
+  weekDay: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: COLORS.darkText,
+    width: 40,
+    textAlign: 'center',
+  },
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  day: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 2,
+    borderRadius: 20,
+  },
+  dayText: {
+    fontSize: 14,
+    color: COLORS.darkText,
+  },
+  selectedDay: {
+    backgroundColor: COLORS.primary,
+  },
+  selectedDayText: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  today: {
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+  },
+  todayText: {
+    color: COLORS.primary,
+    fontWeight: 'bold',
+  },
+  otherMonthDay: {
+    opacity: 0.3,
+  },
+  otherMonthText: {
+    color: COLORS.darkText,
   },
   selectedDateInfo: {
     padding: 20,
