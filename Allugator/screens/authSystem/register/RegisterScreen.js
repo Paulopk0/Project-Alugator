@@ -126,10 +126,25 @@ const RegisterScreen = ({ navigation }) => {
             editable={!loading}
           />
           
+          {/* --- INÍCIO DA MODIFICAÇÃO (Links clicáveis) --- */}
           <Text style={styles.termsText}>
             Ao continuar, você concorda com os {'\n'}
-            <Text style={styles.link}>Termos de Uso</Text> e a <Text style={styles.link}>Política de Privacidade</Text>.
+            <Text 
+              style={styles.link} 
+              onPress={() => navigation.navigate('Terms')}
+            >
+              Termos de Uso
+            </Text>
+            {' e a '}
+            <Text 
+              style={styles.link} 
+              onPress={() => navigation.navigate('PrivacyPolicy')}
+            >
+              Política de Privacidade
+            </Text>
+            .
           </Text>
+          {/* --- FIM DA MODIFICAÇÃO --- */}
 
           <CustomButton
             title={loading ? 'Criando conta...' : 'Criar Conta'}
