@@ -13,13 +13,13 @@ const items = [
         description: 'Parafusadeira profissional, perfeita para trabalhos leves e médios. Inclui bateria extra e maleta.',
         category: 'Ferramentas',
         condition: 'Excelente',
-        photos: 'parafusadeira', // Nome do asset 
+        photos: 'parafusadeira', // Nome do asset
         location: 'São Paulo, SP',
         status: 'available',
         securityDeposit: 50.00
     },
     {
-        ownerId: 1,
+        ownerId: 2,
         title: 'Guarda-Roupa Modular',
         priceDaily: 15.00,
         description: 'Guarda-roupa espaçoso, fácil de montar e desmontar. Ideal para mudanças temporárias.',
@@ -43,7 +43,7 @@ const items = [
         securityDeposit: 80.00
     },
     {
-        ownerId: 1,
+        ownerId: 2,
         title: 'Mesa de Escritório',
         priceDaily: 20.00,
         description: 'Mesa de escritório ampla, 1.20m x 0.60m, em MDF com acabamento amadeirado.',
@@ -55,7 +55,7 @@ const items = [
         securityDeposit: 60.00
     },
     {
-        ownerId: 1,
+        ownerId: 3,
         title: 'Escada Alumínio 6 Degraus',
         priceDaily: 12.00,
         description: 'Escada dobrável de alumínio, 6 degraus, suporta até 120kg.',
@@ -67,7 +67,7 @@ const items = [
         securityDeposit: 40.00
     },
     {
-        ownerId: 1,
+        ownerId: 3,
         title: 'Bicicleta Mountain Bike',
         priceDaily: 35.00,
         description: 'Mountain bike aro 29, 21 marchas, freios a disco. Perfeita para trilhas.',
@@ -79,7 +79,7 @@ const items = [
         securityDeposit: 150.00
     },
     {
-        ownerId: 1,
+        ownerId: 3,
         title: 'Barraca de Camping 4 Pessoas',
         priceDaily: 28.00,
         description: 'Barraca impermeável para 4 pessoas. Fácil montagem, inclui bolsa.',
@@ -101,13 +101,13 @@ const seedItems = () => {
 
         if (row.count === 0) {
             console.log('📦 Inserindo itens iniciais...');
-            
+
             const insertPromises = items.map(item => {
                 return new Promise((resolve, reject) => {
-                    const sql = `INSERT INTO items 
-                        (ownerId, title, priceDaily, description, category, condition, photos, location, status, securityDeposit) 
+                    const sql = `INSERT INTO items
+                        (ownerId, title, priceDaily, description, category, condition, photos, location, status, securityDeposit)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-                    
+
                     db.run(sql, [
                         item.ownerId,
                         item.title,
