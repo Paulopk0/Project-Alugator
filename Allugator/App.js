@@ -23,13 +23,24 @@ import SearchResultsScreen from './screens/search/searchResults/SearchResultsScr
 import FavoritesScreen from './screens/favorites/FavoritesScreen';
 import CalendarScreen from './screens/search/calendar/CalendarScreen';
 import TransactionScreen from './screens/transaction/TransactionScreen';
-import PerfilScreen from './screens/perfil/PerfilScreen';
 import ItemDetailsScreen from './screens/storeSystem/itemDetails/ItemDetailsScreen';
 import PaymentScreen from './screens/transaction/payment/PaymentScreen';
 import ProcessingPaymentScreen from './screens/transaction/processingPayment/ProcessingPaymentScreen';
 import RentalTrackingScreen from './screens/transaction/rentalTracking/RentalTrackingScreen';
 import AddItemScreen from './screens/storeSystem/addItem/AddItemScreen';
 import EditItemScreen from './screens/storeSystem/editItem/EditItemScreen';
+
+// --- INÍCIO: NOVAS TELAS DE PERFIL ---
+import PerfilScreen from './screens/perfil/PerfilScreen';
+import EditProfileScreen from './screens/perfil/EditProfileScreen';
+import SecurityScreen from './screens/perfil/SecurityScreen';
+import ChangePasswordScreen from './screens/perfil/ChangePasswordScreen';
+import PasswordSuccessScreen from './screens/perfil/PasswordSuccessScreen';
+import SettingsScreen from './screens/perfil/SettingsScreen';
+import TermsScreen from './screens/perfil/TermsScreen';
+import PrivacyPolicyScreen from './screens/perfil/PrivacyPolicyScreen';
+import DeleteAccountScreen from './screens/perfil/DeleteAccountScreen';
+// --- FIM: NOVAS TELAS DE PERFIL ---
 
 // Suprime avisos não críticos do console
 LogBox.ignoreLogs([
@@ -42,6 +53,7 @@ const AuthStack = createNativeStackNavigator();
 const StoreStack = createNativeStackNavigator();
 const TransactionStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const ProfileStack = createNativeStackNavigator();
 
 // Stack Navigator para Auth, Login, Register e ForgotPassword
 function AuthNavigator() {
@@ -201,6 +213,55 @@ function TransactionNavigator() {
   );
 }
 
+// --- INÍCIO: NOVO STACK NAVIGATOR DE PERFIL ---
+function ProfileNavigator() {
+  const insets = useSafeAreaInsets();
+  return (
+    <ProfileStack.Navigator
+      screenOptions={{
+        headerShown: false,
+      }}
+    >
+      <ProfileStack.Screen 
+        name="ProfileMain" 
+        component={PerfilScreen}
+      />
+      <ProfileStack.Screen 
+        name="EditProfile" 
+        component={EditProfileScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <ProfileStack.Screen 
+        name="Security" 
+        component={SecurityScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <ProfileStack.Screen 
+        name="ChangePassword" 
+        component={ChangePasswordScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <ProfileStack.Screen 
+        name="PasswordSuccess" 
+        component={PasswordSuccessScreen}
+        options={{ animation: 'fade' }}
+      />
+      <ProfileStack.Screen 
+        name="Settings" 
+        component={SettingsScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <ProfileStack.Screen 
+        name="DeleteAccount" 
+        component={DeleteAccountScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+    </ProfileStack.Navigator>
+  );
+}
+// --- FIM: NOVO STACK NAVIGATOR DE PERFIL ---
+
+
 // Tab Navigator principal com Home, Store, Transaction e Perfil
 function MainTabNavigator() {
   const insets = useSafeAreaInsets();
@@ -275,13 +336,19 @@ function MainTabNavigator() {
       />
       <Tab.Screen 
         name="Perfil" 
-        component={PerfilScreen}
+        component={ProfileNavigator}
         options={{
           tabBarLabel: 'Perfil',
           tabBarIcon: ({ color, size }) => (
             <Text style={{ fontSize: 24, color }}>👤</Text>
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('Perfil', { screen: 'ProfileMain' });
+          },
+        })}
       />
     </Tab.Navigator>
   );
@@ -315,6 +382,16 @@ export default function App() {
               options={{
                 headerShown: false
               }}
+            />
+            <ProfileStack.Screen 
+              name="Terms" 
+              component={TermsScreen}
+              options={{ animation: 'slide_from_right' }}
+            />
+            <ProfileStack.Screen 
+              name="PrivacyPolicy" 
+              component={PrivacyPolicyScreen}
+              options={{ animation: 'slide_from_right' }}
             />
           </Stack.Navigator>
             </NavigationContainer>

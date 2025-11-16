@@ -217,6 +217,88 @@ class UserController {
             });
         }
     }
+
+
+
+    /**
+     * Atualiza o perfil do usuário logado
+     * @route PUT /api/users/profile
+     * @auth Requer autenticação JWT
+     * @access Private
+     */
+    async updateProfile(req, res) {
+        try {
+            const userId = req.user.id; 
+            const { name, phoneNumber } = req.body;
+            
+            const result = await userService.updateProfile(userId, name, phoneNumber);
+            res.status(result.status).json(result);
+        } catch (error) {
+            const status = error.status || 500;
+            res.status(status).json({
+                status: status,
+                message: error.message || 'Erro interno do servidor'
+            });
+        }
+    }
+
+    /**
+     * Altera a senha do usuário logado
+     * @route POST /api/users/change-password
+     * @auth Requer autenticação JWT
+     * @access Private
+     */
+    async changePassword(req, res) {
+        try {
+            const userId = req.user.id; 
+            const { oldPassword, newPassword } = req.body;
+
+            if (!oldPassword || !newPassword) {
+                return res.status(400).json({
+                    status: 400,
+                    message: "Senha antiga e nova senha são obrigatórias."
+                });
+            }
+
+            const result = await userService.changePassword(userId, oldPassword, newPassword);
+            res.status(result.status).json(result);
+        } catch (error) {
+            const status = error.status || 500;
+            res.status(status).json({
+                status: status,
+                message: error.message || 'Erro interno do servidor'
+            });
+        }
+    }
+
+    /**
+     * Apaga a conta do usuário logado
+     * @route POST /api/users/delete-account
+     * @auth Requer autenticação JWT
+     * @access Private
+     */
+    async deleteAccount(req, res) {
+        try {
+            const userId = req.user.id;
+            const { password } = req.body;
+
+            if (!password) {
+                return res.status(400).json({
+                    status: 400,
+                    message: "Senha é obrigatória para confirmar a exclusão."
+                });
+            }
+
+            const result = await userService.deleteAccount(userId, password);
+            res.status(result.status).json(result);
+        } catch (error) {
+            const status = error.status || 500;
+            res.status(status).json({
+                status: status,
+                message: error.message || 'Erro interno do servidor'
+            });
+        }
+    }
 }
 
 module.exports = new UserController();

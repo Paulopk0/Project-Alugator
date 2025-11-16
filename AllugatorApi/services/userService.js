@@ -303,6 +303,111 @@ class UserService {
             };
         }
     }
+
+
+    /**
+     * Atualiza o perfil do usuário (nome, telefone)
+     * @param {number} userId - ID do usuário (do token JWT)
+     * @param {string} name - Novo nome
+     * @param {string} phoneNumber - Novo telefone
+     * @returns {Promise<Object>} Usuário atualizado
+     */
+    async updateProfile(userId, name, phoneNumber) {
+        return new Promise((resolve, reject) => {
+            if (!name) {
+                return reject({ status: 400, message: "Nome é obrigatório." });
+            }
+
+            const sql = "UPDATE users SET name = ?, phoneNumber = ? WHERE id = ?";
+            db.run(sql, [name, phoneNumber, userId], (err) => {
+                if (err) {
+                    console.error('Erro ao atualizar perfil:', err);
+                    return reject({ status: 500, message: 'Erro ao atualizar perfil.' });
+                }
+                
+                // Retorna o usuário atualizado
+                const selectSql = "SELECT id, name, email, phoneNumber FROM users WHERE id = ?";
+                db.get(selectSql, [userId], (selectErr, user) => {
+                    if (selectErr || !user) {
+                         return reject({ status: 404, message: "Usuário não encontrado pós-update." });
+                    }
+                    resolve({
+                        status: 200,
+                        message: "Perfil atualizado com sucesso!",
+                        user: user
+                    });
+                });
+            });
+        });
+    }
+
+    /**
+     * Altera a senha do usuário
+     * @param {number} userId - ID do usuário (do token JWT)
+     * @param {string} oldPassword - Senha atual
+     * @param {string} newPassword - Nova senha
+     * @returns {Promise<Object>} Status 200 ou 401/400
+     */
+    async changePassword(userId, oldPassword, newPassword) {
+        return new Promise((resolve, reject) => {
+            const sql = "SELECT password FROM users WHERE id = ?";
+            db.get(sql, [userId], (err, user) => {
+                if (err || !user) {
+                    return reject({ status: 404, message: "Usuário não encontrado." });
+                }
+                const passwordMatch = bcrypt.compareSync(oldPassword, user.password);
+                if (!passwordMatch) {
+                    return reject({ status: 401, message: "Senha atual incorreta." });
+                }
+                if (!newPassword || newPassword.length < 6) {
+                    return reject({ status: 400, message: "Nova senha deve ter pelo menos 6 caracteres." });
+                }
+                const salt = bcrypt.genSaltSync(10);
+                const passwordHash = bcrypt.hashSync(newPassword, salt);
+                const updateSql = "UPDATE users SET password = ? WHERE id = ?";
+                db.run(updateSql, [passwordHash, userId], (updateErr) => {
+                    if (updateErr) {
+                        return reject({ status: 500, message: 'Erro ao atualizar senha.' });
+                    }
+                    resolve({
+                        status: 200,
+                        message: "Senha alterada com sucesso!"
+                    });
+                });
+            });
+        });
+    }
+
+    /**
+     * Apaga a conta do usuário
+     * @param {number} userId - ID do usuário (do token JWT)
+     * @param {string} password - Senha (para confirmação)
+     * @returns {Promise<Object>} Status 200 ou 401
+     */
+    async deleteAccount(userId, password) {
+        return new Promise((resolve, reject) => {
+            const sql = "SELECT password FROM users WHERE id = ?";
+            db.get(sql, [userId], (err, user) => {
+                if (err || !user) {
+                    return reject({ status: 404, message: "Usuário não encontrado." });
+                }
+                const passwordMatch = bcrypt.compareSync(password, user.password);
+                if (!passwordMatch) {
+                    return reject({ status: 401, message: "Senha incorreta. Não foi possível apagar a conta." });
+                }
+                const deleteSql = "DELETE FROM users WHERE id = ?";
+                db.run(deleteSql, [userId], (deleteErr) => {
+                    if (deleteErr) {
+                        return reject({ status: 500, message: 'Erro ao apagar a conta.' });
+                    }
+                    resolve({
+                        status: 200,
+                        message: "Conta apagada com sucesso."
+                    });
+                });
+            });
+        });
+    }
 }
 
 module.exports = new UserService();
