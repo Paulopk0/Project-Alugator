@@ -71,24 +71,17 @@ const TransactionScreen = ({ navigation }) => {
   const [messageType, setMessageType] = useState('error');
   
   // Estado para confirmação de delete
-  const [deleteConfirmation, setDeleteConfirmation] = useState(null);
+  // ❌ Removido: Agora usa Alert.alert() nativo que é mais seguro
 
   // Carrega dados ao montar o componente
   useEffect(() => {
     loadTransactions();
   }, []);
 
-  // Atualiza quando a tab é clicada
+  // Limpa mensagens ao focar na tab (sem recarregar dados)
   useFocusEffect(
     useCallback(() => {
-      // Reseta para a aba inicial "Meus Itens"
-      setSelectedTab('myItems');
-      
-      // Limpa mensagens anteriores
       setMessage('');
-      
-      // Recarrega dados
-      loadTransactions();
     }, [])
   );
 
@@ -253,15 +246,28 @@ const TransactionScreen = ({ navigation }) => {
 
   // Deleta um item
   const handleDeleteItem = async (item) => {
-    // Abre o modal de confirmação
-    setDeleteConfirmation(item);
+    // Confirmação com Alert.alert (mais seguro que modal)
+    Alert.alert(
+      '🗑️ Deletar Item',
+      `Tem certeza que deseja deletar "${item.name}"?\n\nEsta ação não pode ser desfeita.`,
+      [
+        { 
+          text: 'Cancelar', 
+          onPress: () => {}, 
+          style: 'cancel' 
+        },
+        {
+          text: 'Deletar',
+          onPress: () => confirmDelete(item),
+          style: 'destructive'
+        }
+      ]
+    );
   };
 
   // Confirma e executa a deleção
-  const confirmDelete = async () => {
-    if (!deleteConfirmation) return;
-    
-    const item = deleteConfirmation;
+  const confirmDelete = async (item) => {
+    if (!item) return;
     
     try {
       const response = await deleteItem(item.id);
@@ -270,25 +276,17 @@ const TransactionScreen = ({ navigation }) => {
       if (response && (response.status === 200 || response.message === 'Item deletado com sucesso!' || response.success === true)) {
         setMessage('Item excluído com sucesso!');
         setMessageType('success');
-        setDeleteConfirmation(null);
         await loadTransactions();
       } else {
         const errorMsg = response?.message || 'Erro ao excluir item';
         setMessage(errorMsg);
         setMessageType('error');
-        setDeleteConfirmation(null);
       }
     } catch (error) {
       const errorMsg = 'Erro ao excluir item: ' + error.message;
       setMessage(errorMsg);
       setMessageType('error');
-      setDeleteConfirmation(null);
     }
-  };
-
-  // Cancela a deleção
-  const cancelDelete = () => {
-    setDeleteConfirmation(null);
   };
 
   const renderItemCard = (item) => {
@@ -555,34 +553,6 @@ const TransactionScreen = ({ navigation }) => {
           type={messageType}
           onClose={() => setMessage('')}
         />
-      )}
-
-      {/* Modal de confirmação de delete */}
-      {deleteConfirmation && (
-        <View style={styles.deleteModalOverlay}>
-          <View style={styles.deleteModal}>
-            <Text style={styles.deleteModalTitle}>Excluir Item</Text>
-            <Text style={styles.deleteModalMessage}>
-              Tem certeza que deseja excluir "{deleteConfirmation.name}"? Esta ação não pode ser desfeita.
-            </Text>
-            
-            <View style={styles.deleteModalButtons}>
-              <TouchableOpacity 
-                style={styles.deleteModalCancelButton}
-                onPress={cancelDelete}
-              >
-                <Text style={styles.deleteModalCancelText}>Cancelar</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.deleteModalConfirmButton}
-                onPress={confirmDelete}
-              >
-                <Text style={styles.deleteModalConfirmText}>Excluir</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
       )}
 
       {/* Botão flutuante para adicionar item — aparece apenas em 'Meus Itens' */}
@@ -896,68 +866,6 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontWeight: 'bold',
     lineHeight: 32,
-  },
-
-  // Modal de confirmação de delete
-  deleteModalOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
-  },
-  deleteModal: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 24,
-    width: '80%',
-    maxWidth: 350,
-    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)',
-    elevation: 10,
-  },
-  deleteModalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.darkText,
-    marginBottom: 12,
-  },
-  deleteModalMessage: {
-    fontSize: 14,
-    color: COLORS.gray,
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  deleteModalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  deleteModalCancelButton: {
-    flex: 1,
-    backgroundColor: COLORS.lightGray,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  deleteModalCancelText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.darkText,
-  },
-  deleteModalConfirmButton: {
-    flex: 1,
-    backgroundColor: COLORS.red,
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  deleteModalConfirmText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: COLORS.white,
   },
 });
 

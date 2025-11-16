@@ -7,9 +7,11 @@
  * - Gerenciar login/logout
  * - Restaurar sessão ao abrir app
  * - Sincronizar com AsyncStorage
+ * - Validar expiração de token
  */
 
 import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import AuthStorage from '../services/AuthStorage';
 import { login as loginAPI, logout as logoutAPI, register as registerAPI } from '../apis/AuthApi';
 
@@ -36,12 +38,33 @@ export function AuthProvider({ children }) {
       const savedUser = await AuthStorage.getUser();
       
       if (savedToken && savedUser) {
-        setToken(savedToken);
-        setUser(savedUser);
-        setIsSignout(false);
+        // Valida se o token ainda é válido
+        try {
+          const decoded = jwtDecode(savedToken);
+          
+          // Verifica se expirou (exp está em segundos, Date.now() em ms)
+          if (decoded.exp && decoded.exp * 1000 > Date.now()) {
+            setToken(savedToken);
+            setUser(savedUser);
+            setIsSignout(false);
+            console.log('[AuthContext] ✅ Token restaurado e válido');
+          } else {
+            // Token expirado - limpa e força novo login
+            console.log('[AuthContext] ⚠️ Token expirado, limpando dados');
+            await AuthStorage.clearToken();
+            await AuthStorage.clearUser();
+            setIsSignout(true);
+          }
+        } catch (decodeError) {
+          // Token inválido - limpa e força novo login
+          console.error('[AuthContext] ❌ Token inválido:', decodeError);
+          await AuthStorage.clearToken();
+          await AuthStorage.clearUser();
+          setIsSignout(true);
+        }
       }
     } catch (error) {
-      console.error('Erro ao restaurar sessão:', error);
+      console.error('[AuthContext] Erro ao restaurar sessão:', error);
     } finally {
       setLoading(false);
     }
@@ -131,6 +154,7 @@ export function AuthProvider({ children }) {
       console.log('[AuthContext] Response do registro:', response);
       
       if (response.token && response.user) {
+        // Registro com token retornado (nova API)
         await AuthStorage.saveToken(response.token);
         await AuthStorage.saveUser(response.user);
         
@@ -140,8 +164,10 @@ export function AuthProvider({ children }) {
         
         return { success: true, message: 'Cadastro realizado com sucesso!' };
       } else if (response.userId) {
-        // Se apenas userId foi retornado, significa que foi criado com sucesso
-        return { success: true, message: 'Cadastro realizado com sucesso!' };
+        // Fallback: Registro retornou só userId (API antiga), faz login automático
+        console.log('[AuthContext] Usuário criado com ID:', response.userId, '- fazendo login automático...');
+        const loginResult = await handleLogin(email, password);
+        return loginResult;
       } else {
         return { success: false, message: response.message || 'Erro ao registrar' };
       }
@@ -154,7 +180,7 @@ export function AuthProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [handleLogin]);
 
   /**
    * Atualiza dados do usuário

@@ -70,6 +70,38 @@ const StoreScreen = ({ navigation }) => {
   const [showingMyItems, setShowingMyItems] = useState(false);
 
   /**
+   * Filtra itens: exclui meus itens e retorna apenas disponíveis/alugados
+   */
+  const getOthersAllItems = () => {
+    if (!Array.isArray(items)) return [];
+    if (!Array.isArray(myItems)) return items; // Se não tiver myItems, retorna todos
+    
+    const myItemIds = myItems.map(item => item.id);
+    return items.filter(item => !myItemIds.includes(item.id));
+  };
+
+  /**
+   * Filtra apenas itens alugáveis de outras pessoas (disponíveis)
+   */
+  const getOthersRentableItems = () => {
+    if (!Array.isArray(items)) return [];
+    if (!Array.isArray(myItems)) return items.filter(item => item.status === 'available');
+    
+    const myItemIds = myItems.map(item => item.id);
+    return items.filter(item => 
+      !myItemIds.includes(item.id) && 
+      item.status === 'available'
+    );
+  };
+
+  /**
+   * Retorna os itens a exibir baseado na aba selecionada
+   */
+  const getDisplayItems = () => {
+    return showingMyItems ? getOthersRentableItems() : getOthersAllItems();
+  };
+
+  /**
    * Carrega dados iniciais ao montar o componente
    */
   useEffect(() => {
@@ -257,7 +289,7 @@ const StoreScreen = ({ navigation }) => {
           styles.toggleLabel,
           showingMyItems && styles.toggleLabelActive
         ]}>
-          {showingMyItems ? 'Meus' : 'Todos'}
+          {showingMyItems ? 'Alugáveis' : 'Todos'}
         </Text>
       </TouchableOpacity>
 
@@ -270,15 +302,8 @@ const StoreScreen = ({ navigation }) => {
           {/* Info bar com contagem e resumo */}
           <View style={styles.infoBar}>
             <Text style={styles.infoText}>
-              {showingMyItems ? '📦 Meus Itens' : '🏪 Todos os Itens'} ({filteredItems.length})
+              {showingMyItems ? '📦 Itens Alugáveis' : '🏪 Todos os Itens'} ({getDisplayItems().length})
             </Text>
-            {showingMyItems && getRentedCount() > 0 && (
-              <View style={styles.rentedBadge}>
-                <Text style={styles.rentedBadgeText}>
-                  {getRentedCount()} alugados
-                </Text>
-              </View>
-            )}
           </View>
 
           {/* Chips de categoria rápidos */}
@@ -334,10 +359,7 @@ const StoreScreen = ({ navigation }) => {
                   styles.categoryChip,
                   selectedCategory === null && styles.categoryChipActive
                 ]}
-                onPress={() => {
-                  setSelectedCategory(null);
-                  setFilteredItems(items);
-                }}
+                onPress={() => handleCategoryFilter(null)}
               >
                 <Text style={[
                   styles.categoryChipText,
@@ -368,19 +390,19 @@ const StoreScreen = ({ navigation }) => {
           )}
 
           {/* Lista de Items */}
-          {filteredItems.length === 0 ? (
+          {getDisplayItems().length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>📭</Text>
               <Text style={styles.emptyTitle}>Nenhum item encontrado</Text>
               <Text style={styles.emptySubtitle}>
                 {showingMyItems 
-                  ? 'Você ainda não tem itens cadastrados'
-                  : 'Execute o seeder para adicionar items de exemplo'
+                  ? 'Nenhum item alugável disponível no momento'
+                  : 'Nenhum item disponível'
                 }
               </Text>
             </View>
           ) : (
-            (filteredItems).map((item) => {
+            (getDisplayItems()).map((item) => {
               const isMyItem = showingMyItems;
               const hasActiveRental = item.activeRental;
               const isRented = item.status === 'rented' || hasActiveRental;

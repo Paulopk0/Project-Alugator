@@ -3,20 +3,20 @@ const db = require('../config/database.js');
 
 const users = [
   {
-    name: 'User Test 1',
-    email: 'user1@test.com',
+    name: 'Paulo',
+    email: 'paulo@test.com',
     phoneNumber: '5511999999991',
     password: '123456'
   },
   {
-    name: 'User Test 2',
-    email: 'user2@test.com',
+    name: 'Luan',
+    email: 'luan@test.com',
     phoneNumber: '5511999999992',
     password: '123456'
   },
   {
-    name: 'User Test 3',
-    email: 'user3@test.com',
+    name: 'Murillo',
+    email: 'murillo@test.com',
     phoneNumber: '5511999999993',
     password: '123456'
   }

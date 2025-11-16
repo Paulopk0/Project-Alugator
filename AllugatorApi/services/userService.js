@@ -105,6 +105,9 @@ class UserService {
         try {
             const salt = bcrypt.genSaltSync(10);
             const passwordHash = bcrypt.hashSync(password, salt);
+            
+            // ✨ Salva referência para 'this' (UserService) já que db.run() muda o contexto
+            const self = this;
 
             return new Promise((resolve, reject) => {
                 const sql = 'INSERT INTO users (name, email, phoneNumber, password) VALUES (?,?,?,?)';
@@ -121,10 +124,17 @@ class UserService {
                         });
                         return;
                     }
+                    
+                    // ✨ Novo: Gera token logo após criar usuário (igual ao login)
+                    const newUser = { id: this.lastID, name, email };
+                    const token = self.generateToken(newUser);
+                    
                     resolve({
                         status: 201,
                         message: "Usuário cadastrado com sucesso!",
-                        userId: this.lastID
+                        userId: this.lastID,
+                        token: token,
+                        user: newUser
                     });
                 });
             });
