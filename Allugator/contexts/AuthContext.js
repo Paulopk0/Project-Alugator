@@ -107,21 +107,14 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  /**
+/**
    * Realiza logout e limpa dados
    */
   const handleLogout = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Chama API de logout (se necessário)
-      if (token) {
-        await logoutAPI();
-      }
-      
-      // Limpa AsyncStorage
-      await AuthStorage.clearToken();
-      await AuthStorage.clearUser();
+      await logoutAPI();
       
       // Atualiza estado
       setToken(null);
