@@ -31,7 +31,7 @@ const items = [
         securityDeposit: 100.00
     },
     {
-        ownerId: 1,
+        ownerId: 2,
         title: 'Furadeira de Impacto',
         priceDaily: 30.00,
         description: 'Furadeira de impacto 800W, ideal para concreto e alvenaria. Acompanha conjunto de brocas.',
@@ -43,7 +43,7 @@ const items = [
         securityDeposit: 80.00
     },
     {
-        ownerId: 1,
+        ownerId: 2,
         title: 'Mesa de Escritório',
         priceDaily: 20.00,
         description: 'Mesa de escritório ampla, 1.20m x 0.60m, em MDF com acabamento amadeirado.',
@@ -55,7 +55,7 @@ const items = [
         securityDeposit: 60.00
     },
     {
-        ownerId: 1,
+        ownerId: 3,
         title: 'Escada Alumínio 6 Degraus',
         priceDaily: 12.00,
         description: 'Escada dobrável de alumínio, 6 degraus, suporta até 120kg.',
@@ -67,7 +67,7 @@ const items = [
         securityDeposit: 40.00
     },
     {
-        ownerId: 1,
+        ownerId: 3,
         title: 'Bicicleta Mountain Bike',
         priceDaily: 35.00,
         description: 'Mountain bike aro 29, 21 marchas, freios a disco. Perfeita para trilhas.',

@@ -121,10 +121,17 @@ class UserService {
                         });
                         return;
                     }
+                    
+                    // ✨ Novo: Gera token logo após criar usuário (igual ao login)
+                    const newUser = { id: this.lastID, name, email };
+                    const token = this.generateToken(newUser);
+                    
                     resolve({
                         status: 201,
                         message: "Usuário cadastrado com sucesso!",
-                        userId: this.lastID
+                        userId: this.lastID,
+                        token: token,
+                        user: newUser
                     });
                 });
             });

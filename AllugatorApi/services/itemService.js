@@ -116,14 +116,14 @@ class ItemService {
      */
     async getAllAvailableItems(filters = {}) {
         return new Promise((resolve, reject) => {
-            // Query base: busca itens disponíveis com dados do proprietário
+            // Query base: busca itens disponíveis E alugados com dados do proprietário
             let sql = `SELECT 
                 items.*,
                 users.name as ownerName,
                 users.email as ownerEmail
                 FROM items 
                 LEFT JOIN users ON items.ownerId = users.id
-                WHERE items.status = 'available'`; // Apenas itens disponíveis
+                WHERE items.status IN ('available', 'rented')`; // Itens disponíveis e alugados
             
             const params = [];
 
@@ -326,9 +326,32 @@ class ItemService {
      */
     async getItemsByOwnerWithRentals(ownerId) {
         return new Promise((resolve, reject) => {
+            // Garante que ownerId é um número válido
+            const numericOwnerId = parseInt(ownerId, 10);
+            
+            if (isNaN(numericOwnerId)) {
+                reject({
+                    status: 400,
+                    message: 'ID do proprietário inválido'
+                });
+                return;
+            }
+
             const sql = `
                 SELECT 
-                    i.*,
+                    i.id,
+                    i.title,
+                    i.description,
+                    i.category,
+                    i.condition,
+                    i.priceDaily,
+                    i.status,
+                    i.location,
+                    i.photos,
+                    i.securityDeposit,
+                    i.publishDate,
+                    i.createdAt,
+                    i.ownerId,
                     r.id as rentalId,
                     r.startDate,
                     r.endDate,
@@ -343,7 +366,7 @@ class ItemService {
                 ORDER BY i.createdAt DESC
             `;
 
-            db.all(sql, [ownerId], (err, items) => {
+            db.all(sql, [numericOwnerId], (err, items) => {
                 if (err) {
                     console.error('Erro ao buscar itens do proprietário com aluguéis:', err);
                     reject({
@@ -353,7 +376,10 @@ class ItemService {
                     return;
                 }
 
-                const itemsWithPhotos = items.map(item => {
+                // Filtra apenas itens que realmente pertencem ao usuário (segurança extra)
+                const userItems = items.filter(item => item.ownerId === numericOwnerId);
+
+                const itemsWithPhotos = userItems.map(item => {
                     let photos = [];
                     if (item.photos) {
                         try {
