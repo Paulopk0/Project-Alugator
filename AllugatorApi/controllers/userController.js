@@ -2,15 +2,22 @@
  * UserController - Controlador de usuários
  * 
  * Responsável por processar requisições HTTP relacionadas a usuários:
- * - Registro de novos usuários
+ * - Registro de novos usuários (com validação e sanitização)
  * - Login e autenticação (geração de JWT)
  * - Consulta de usuários
  * 
  * Senhas são armazenadas com hash bcrypt para segurança.
  * Login retorna token JWT para autenticação em rotas protegidas.
+ * 
+ * Validações aplicadas:
+ * - Email: formato válido e único
+ * - Senha: mínimo 6 caracteres
+ * - Nome: 3-100 caracteres
+ * - Telefone: 10-20 caracteres (opcional)
  */
 
 const userService = require('../services/userService');
+const { validateRegister, validateLogin, sanitizeRegister, sanitizeLogin } = require('../utils/validation');
 
 class UserController {
     /**
@@ -21,14 +28,14 @@ class UserController {
      * @access Public
      * 
      * @param {Object} req.body - Dados do usuário
-     * @param {string} req.body.name - Nome completo (obrigatório)
-     * @param {string} req.body.email - Email único (obrigatório)
-     * @param {string} req.body.password - Senha (obrigatório, será hasheada)
-     * @param {string} req.body.phoneNumber - Telefone (opcional)
+     * @param {string} req.body.name - Nome completo (obrigatório, 3-100 chars)
+     * @param {string} req.body.email - Email único (obrigatório, formato válido)
+     * @param {string} req.body.password - Senha (obrigatório, mín 6 chars)
+     * @param {string} req.body.phoneNumber - Telefone (opcional, 10-20 chars)
      * 
-     * @returns {Object} 201 - Usuário criado com sucesso
-     * @returns {Object} 400 - Campos obrigatórios faltando
-     * @returns {Object} 409 - Email já cadastrado
+     * @returns {Object} 201 - Usuário criado com sucesso + token JWT
+     * @returns {Object} 400 - Validação falhou ou email já existe
+     * @returns {Object} 422 - Dados inválidos
      * @returns {Object} 500 - Erro interno do servidor
      * 
      * @example
@@ -39,22 +46,41 @@ class UserController {
      *   "password": "senha123",
      *   "phoneNumber": "(11) 99999-9999"
      * }
+     * 
+     * Response 201:
+     * {
+     *   "status": 201,
+     *   "message": "Usuário cadastrado com sucesso!",
+     *   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+     *   "user": { "id": 1, "name": "João Silva", "email": "joao@email.com" },
+     *   "userId": 1
+     * }
      */
     async register(req, res) {
         try {
-            const { name, email, phoneNumber, password } = req.body;
+            const rawData = req.body;
 
-            // Validação de campos obrigatórios
-            if (!name || !email || !password) {
-                return res.status(400).json({
-                    status: 400,
-                    message: 'Nome, email e senha são obrigatórios.'
+            // ✅ VALIDAÇÃO: Verificar se campos obrigatórios existem
+            const validation = validateRegister(rawData);
+            if (!validation.isValid) {
+                return res.status(422).json({
+                    status: 422,
+                    message: 'Dados inválidos',
+                    errors: validation.errors
                 });
             }
 
+            // ✅ SANITIZAÇÃO: Limpar e normalizar dados
+            const sanitizedData = sanitizeRegister(rawData);
+
             // Delega lógica de registro para o service
             // Service irá: verificar email único, hashear senha, inserir no banco
-            const result = await userService.register(name, email, phoneNumber, password);
+            const result = await userService.register(
+                sanitizedData.name,
+                sanitizedData.email,
+                sanitizedData.phoneNumber,
+                sanitizedData.password
+            );
             res.status(result.status).json(result);
         } catch (error) {
             const status = error.status || 500;
@@ -73,10 +99,11 @@ class UserController {
      * @access Public
      * 
      * @param {Object} req.body - Credenciais
-     * @param {string} req.body.email - Email do usuário
-     * @param {string} req.body.password - Senha do usuário
+     * @param {string} req.body.email - Email do usuário (obrigatório, formato válido)
+     * @param {string} req.body.password - Senha do usuário (obrigatório, mín 6 chars)
      * 
      * @returns {Object} 200 - Login bem-sucedido com token JWT
+     * @returns {Object} 422 - Dados inválidos
      * @returns {Object} 401 - Credenciais inválidas
      * @returns {Object} 500 - Erro interno do servidor
      * 
@@ -87,7 +114,7 @@ class UserController {
      *   "password": "senha123"
      * }
      * 
-     * Response:
+     * Response 200:
      * {
      *   "status": 200,
      *   "message": "Login realizado com sucesso",
@@ -97,11 +124,24 @@ class UserController {
      */
     async login(req, res) {
         try {
-            const { email, password } = req.body;
+            const rawData = req.body;
+
+            // ✅ VALIDAÇÃO: Verificar email e senha
+            const validation = validateLogin(rawData);
+            if (!validation.isValid) {
+                return res.status(422).json({
+                    status: 422,
+                    message: 'Email ou senha inválidos',
+                    errors: validation.errors
+                });
+            }
+
+            // ✅ SANITIZAÇÃO: Normalizar dados
+            const sanitizedData = sanitizeLogin(rawData);
             
             // Delega autenticação para o service
             // Service irá: buscar usuário, comparar senha, gerar JWT
-            const result = await userService.login(email, password);
+            const result = await userService.login(sanitizedData.email, sanitizedData.password);
             res.status(result.status).json(result);
         } catch (error) {
             const status = error.status || 500;

@@ -2,16 +2,23 @@
  * ItemController - Controlador de itens para aluguel
  * 
  * Responsável por processar requisições HTTP relacionadas a itens:
- * - Criação de novos itens
+ * - Criação de novos itens (com validação e sanitização)
  * - Listagem e busca de itens disponíveis
  * - Consulta de itens por ID
  * - Gestão de itens do usuário
  * - Atualização e exclusão de itens
  * 
  * Todas as rotas (exceto GET públicas) requerem autenticação JWT.
+ * 
+ * Validações aplicadas:
+ * - Título: 5-200 caracteres
+ * - Preço: número positivo maior que 0.01
+ * - Categoria: 3-50 caracteres
+ * - Descrição: até 1000 caracteres (opcional)
  */
 
 const itemService = require('../services/itemService');
+const { validateCreateItem, sanitizeItem } = require('../utils/validation');
 
 class ItemController {
     /**
@@ -22,43 +29,68 @@ class ItemController {
      * @access Private
      * 
      * @param {Object} req.body - Dados do item
-     * @param {string} req.body.title - Título do item (obrigatório)
-     * @param {number} req.body.priceDaily - Preço por dia (obrigatório)
-     * @param {string} req.body.category - Categoria (obrigatório)
-     * @param {string} req.body.condition - Condição (obrigatório)
-     * @param {string} req.body.description - Descrição detalhada
-     * @param {string} req.body.photos - Nome da foto
-     * @param {string} req.body.location - Localização
-     * @param {number} req.body.securityDeposit - Valor da caução
+     * @param {string} req.body.title - Título do item (5-200 chars, obrigatório)
+     * @param {number} req.body.priceDaily - Preço por dia (número positivo, obrigatório)
+     * @param {string} req.body.category - Categoria (3-50 chars, obrigatório)
+     * @param {string} req.body.condition - Condição (3-50 chars, obrigatório)
+     * @param {string} req.body.description - Descrição detalhada (até 1000 chars, opcional)
+     * @param {string} req.body.photos - Nome da foto (opcional)
+     * @param {string} req.body.location - Localização (até 200 chars, opcional)
+     * @param {number} req.body.securityDeposit - Valor da caução (número não-negativo, opcional)
      * 
      * @returns {Object} 201 - Item criado com sucesso
-     * @returns {Object} 400 - Campos obrigatórios faltando
+     * @returns {Object} 422 - Dados inválidos (validação falhou)
      * @returns {Object} 500 - Erro interno do servidor
+     * 
+     * @example
+     * POST /api/items
+     * Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+     * {
+     *   "title": "Bicicleta Mountain Bike 21 Marchas",
+     *   "priceDaily": 25.50,
+     *   "category": "Esportes",
+     *   "condition": "Excelente",
+     *   "description": "Bicicleta em perfeito estado, nunca caiu",
+     *   "location": "São Paulo, SP",
+     *   "securityDeposit": 100
+     * }
+     * 
+     * Response 201:
+     * {
+     *   "status": 201,
+     *   "message": "Item criado com sucesso",
+     *   "itemId": 42
+     * }
      */
     async createItem(req, res) {
         try {
-            const { title, priceDaily, description, category, condition, photos, location, securityDeposit } = req.body;
+            const rawData = req.body;
             const ownerId = req.user.id; // ID do usuário autenticado (extraído do JWT pelo middleware)
 
-            // Validações de campos obrigatórios
-            if (!title || !priceDaily || !category || !condition) {
-                return res.status(400).json({
-                    status: 400,
-                    message: 'Campos obrigatórios: title, priceDaily, category, condition'
+            // ✅ VALIDAÇÃO: Verificar se dados estão válidos
+            const validation = validateCreateItem(rawData);
+            if (!validation.isValid) {
+                return res.status(422).json({
+                    status: 422,
+                    message: 'Dados do item inválidos',
+                    errors: validation.errors
                 });
             }
+
+            // ✅ SANITIZAÇÃO: Limpar e normalizar dados
+            const sanitizedData = sanitizeItem(rawData);
 
             // Delega lógica de negócio para o service
             const result = await itemService.createItem({
                 ownerId,
-                title,
-                priceDaily,
-                description,
-                category,
-                condition,
-                photos,
-                location,
-                securityDeposit
+                title: sanitizedData.title,
+                priceDaily: sanitizedData.priceDaily,
+                description: sanitizedData.description,
+                category: sanitizedData.category,
+                condition: sanitizedData.condition,
+                photos: sanitizedData.photos,
+                location: sanitizedData.location,
+                securityDeposit: sanitizedData.securityDeposit
             });
 
             res.status(result.status).json(result);
