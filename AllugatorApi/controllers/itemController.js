@@ -72,8 +72,19 @@ class ItemController {
             if (!validation.isValid) {
                 return res.status(422).json({
                     status: 422,
-                    message: 'Dados do item inválidos',
-                    errors: validation.errors
+                    message: 'Validação falhou. Verifique os campos inválidos abaixo.',
+                    field: 'createItem',
+                    errors: validation.errors,
+                    details: {
+                        title: !rawData.title ? 'Campo obrigatório' : (rawData.title.length < 5 ? 'Mínimo 5 caracteres' : (rawData.title.length > 200 ? 'Máximo 200 caracteres' : null)),
+                        priceDaily: !rawData.priceDaily ? 'Campo obrigatório' : (isNaN(parseFloat(rawData.priceDaily)) ? 'Deve ser um número' : (parseFloat(rawData.priceDaily) <= 0 ? 'Deve ser maior que 0' : null)),
+                        category: !rawData.category ? 'Campo obrigatório' : (rawData.category.length < 3 ? 'Mínimo 3 caracteres' : (rawData.category.length > 50 ? 'Máximo 50 caracteres' : null)),
+                        condition: !rawData.condition ? 'Campo obrigatório' : (rawData.condition.length < 3 ? 'Mínimo 3 caracteres' : (rawData.condition.length > 50 ? 'Máximo 50 caracteres' : null)),
+                        description: rawData.description && rawData.description.length > 1000 ? 'Máximo 1000 caracteres' : null,
+                        location: rawData.location && rawData.location.length > 200 ? 'Máximo 200 caracteres' : null,
+                        securityDeposit: rawData.securityDeposit && (isNaN(parseFloat(rawData.securityDeposit)) || parseFloat(rawData.securityDeposit) < 0) ? 'Deve ser um número não-negativo' : null,
+                        photos: null // opcional
+                    }
                 });
             }
 

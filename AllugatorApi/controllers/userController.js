@@ -65,8 +65,15 @@ class UserController {
             if (!validation.isValid) {
                 return res.status(422).json({
                     status: 422,
-                    message: 'Dados inválidos',
-                    errors: validation.errors
+                    message: 'Validação falhou. Verifique os campos inválidos abaixo.',
+                    field: 'register',
+                    errors: validation.errors,
+                    details: {
+                        name: !rawData.name ? 'Campo obrigatório' : (rawData.name.length < 3 ? 'Mínimo 3 caracteres' : (rawData.name.length > 100 ? 'Máximo 100 caracteres' : null)),
+                        email: !rawData.email ? 'Campo obrigatório' : (!validation.errors.find(e => e.includes('Email')) ? null : 'Formato inválido (ex: usuario@email.com)'),
+                        password: !rawData.password ? 'Campo obrigatório' : (rawData.password.length < 6 ? 'Mínimo 6 caracteres' : null),
+                        phoneNumber: rawData.phoneNumber && rawData.phoneNumber.length > 0 && (rawData.phoneNumber.length < 10 || rawData.phoneNumber.length > 20) ? 'Entre 10 e 20 caracteres' : null
+                    }
                 });
             }
 
@@ -86,7 +93,8 @@ class UserController {
             const status = error.status || 500;
             res.status(status).json({
                 status: status,
-                message: error.message || 'Erro interno do servidor'
+                message: error.message || 'Erro interno do servidor',
+                field: 'register'
             });
         }
     }
@@ -131,8 +139,13 @@ class UserController {
             if (!validation.isValid) {
                 return res.status(422).json({
                     status: 422,
-                    message: 'Email ou senha inválidos',
-                    errors: validation.errors
+                    message: 'Validação falhou. Verifique os campos inválidos abaixo.',
+                    field: 'login',
+                    errors: validation.errors,
+                    details: {
+                        email: !rawData.email ? 'Campo obrigatório' : (!validation.errors.find(e => e.includes('Email')) ? null : 'Formato inválido (ex: usuario@email.com)'),
+                        password: !rawData.password ? 'Campo obrigatório' : (rawData.password.length < 6 ? 'Mínimo 6 caracteres' : null)
+                    }
                 });
             }
 
@@ -147,7 +160,8 @@ class UserController {
             const status = error.status || 500;
             res.status(status).json({
                 status: status,
-                message: error.message || 'Erro interno do servidor'
+                message: error.message || 'Erro interno do servidor',
+                field: 'login'
             });
         }
     }
