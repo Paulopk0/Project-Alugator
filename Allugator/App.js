@@ -1,10 +1,29 @@
-import React from 'react';
-import { Text, Dimensions, LogBox } from 'react-native';
+import React, { useContext } from 'react';
+import { View, Text, ActivityIndicator } from 'react-native';
+import { AuthContext } from './contexts/AuthContext';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
+/*
+ * App.js - Entrypoint do aplicativo React Native (Expo)
+ *
+ * Estrutura principal:
+ * - Providers: `AuthProvider`, `ItemProvider`, `RentalProvider` (envolvem toda a árvore)
+ * - Navegadores (navigators):
+ *    - AuthNavigator: login / register / forgot password flow
+ *    - StoreNavigator: telas da loja, detalhe de itens, pagamento
+ *    - TransactionNavigator: telas de transações / meus itens
+ *    - ProfileNavigator: telas de perfil / configurações / segurança
+ *    - MainTabNavigator: bottom tabs (Home, Store, Transaction, Perfil)
+ * - AppNavigator escolhe entre `AuthNavigator` e `MainTabNavigator` com base em `AuthContext`
+ *
+ * Comentários importantes:
+ * - Evite remover importações de telas sem atualizar os navigators.
+ * - Muitos listeners usam `navigation.navigate('Stack', { screen: 'X' })` — checar rotas ao renomear.
+ */
 
 // Import Contexts
 import { AuthProvider } from './contexts/AuthContext';
@@ -16,6 +35,8 @@ import AuthScreen from './screens/authSystem/auth/authScreen';
 import LoginScreen from './screens/authSystem/login/LoginScreen';
 import RegisterScreen from './screens/authSystem/register/RegisterScreen';
 import ForgotPasswordScreen from './screens/authSystem/forgotpassword/ForgotPasswordScreen';
+import ValidateCodeScreen from './screens/authSystem/validatecode/ValidateCodeScreen';
+import ResetPasswordScreen from './screens/authSystem/resetpassword/ResetPasswordScreen';
 import HomeScreen from './screens/home/HomeScreen';
 import StoreScreen from './screens/storeSystem/store/StoreScreen';
 import SearchScreen from './screens/search/SearchScreen';
@@ -42,12 +63,6 @@ import PrivacyPolicyScreen from './screens/perfil/PrivacyPolicyScreen';
 import DeleteAccountScreen from './screens/perfil/DeleteAccountScreen';
 // --- FIM: NOVAS TELAS DE PERFIL ---
 
-// Suprime avisos não críticos do console
-LogBox.ignoreLogs([
-  'props.pointerEvents is deprecated',
-  'Unexpected text node',
-]);
-
 const Stack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
 const StoreStack = createNativeStackNavigator();
@@ -68,6 +83,8 @@ function AuthNavigator() {
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
       <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <AuthStack.Screen name="ValidateCode" component={ValidateCodeScreen} />
+      <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
     </AuthStack.Navigator>
   );
 }
@@ -259,7 +276,56 @@ function ProfileNavigator() {
     </ProfileStack.Navigator>
   );
 }
-// --- FIM: NOVO STACK NAVIGATOR DE PERFIL ---
+// Componente que decide qual navigator mostrar baseado na autenticação
+function AppNavigator() {
+  const { isAuthenticated, loading } = useContext(AuthContext);
+
+  console.log('[AppNavigator] Estado:', { isAuthenticated, loading });
+
+  // Mostra loading enquanto verifica sessão
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0FFF0' }}>
+        <ActivityIndicator size="large" color="#1DE9B6" />
+      </View>
+    );
+  }
+
+  return (
+    <Stack.Navigator
+      initialRouteName={isAuthenticated ? "MainTabs" : "Auth"}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#F0FFF0' }
+      }}
+    >
+      <Stack.Screen 
+        name="Auth" 
+        component={AuthNavigator}
+        options={{
+          headerShown: false
+        }}
+      />
+      <Stack.Screen 
+        name="MainTabs" 
+        component={MainTabNavigator}
+        options={{
+          headerShown: false
+        }}
+      />
+      <ProfileStack.Screen 
+        name="Terms" 
+        component={TermsScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <ProfileStack.Screen 
+        name="PrivacyPolicy" 
+        component={PrivacyPolicyScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+    </Stack.Navigator>
+  );
+}
 
 
 // Tab Navigator principal com Home, Store, Transaction e Perfil
@@ -362,38 +428,7 @@ export default function App() {
           <RentalProvider>
             <NavigationContainer>
               <StatusBar style="auto" />
-            <Stack.Navigator
-              initialRouteName="Auth"
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: '#F0FFF0' }
-              }}
-            >
-            <Stack.Screen 
-              name="Auth" 
-              component={AuthNavigator}
-              options={{
-                headerShown: false
-              }}
-            />
-            <Stack.Screen 
-              name="MainTabs" 
-              component={MainTabNavigator}
-              options={{
-                headerShown: false
-              }}
-            />
-            <ProfileStack.Screen 
-              name="Terms" 
-              component={TermsScreen}
-              options={{ animation: 'slide_from_right' }}
-            />
-            <ProfileStack.Screen 
-              name="PrivacyPolicy" 
-              component={PrivacyPolicyScreen}
-              options={{ animation: 'slide_from_right' }}
-            />
-          </Stack.Navigator>
+              <AppNavigator />
             </NavigationContainer>
           </RentalProvider>
         </ItemProvider>

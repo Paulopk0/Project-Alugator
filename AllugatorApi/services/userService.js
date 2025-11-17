@@ -408,6 +408,227 @@ class UserService {
             });
         });
     }
+
+    /**
+     * generateResetCode - Gera código de recuperação de senha
+     * 
+     * Fluxo:
+     * 1. Verifica se email existe
+     * 2. Invalida códigos anteriores (marca como usados)
+     * 3. Gera código de 6 dígitos
+     * 4. Salva no banco com validade de 15 minutos
+     * 
+     * @param {string} email - Email do usuário
+     * @returns {Promise<Object>} Código e ID do usuário
+     */
+    async generateResetCode(email) {
+        try {
+            return new Promise((resolve, reject) => {
+                // 1. Buscar usuário por email
+                const findUserSql = "SELECT id, name, email FROM users WHERE email = ?";
+                db.get(findUserSql, [email], (err, user) => {
+                    if (err || !user) {
+                        return reject({
+                            status: 404,
+                            message: "Email não encontrado."
+                        });
+                    }
+
+                    // 2. Invalidar códigos anteriores deste usuário
+                    const invalidateSql = "UPDATE password_reset_codes SET used = 1 WHERE userId = ? AND used = 0";
+                    db.run(invalidateSql, [user.id], (invalidateErr) => {
+                        if (invalidateErr) {
+                            console.error('Erro ao invalidar códigos antigos:', invalidateErr);
+                        }
+
+                        // 3. Gerar código de 6 dígitos
+                        const code = Math.floor(100000 + Math.random() * 900000).toString();
+                        
+                        // 4. Calcular expiração (15 minutos)
+                        const expiresAt = new Date();
+                        expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+
+                        // 5. Inserir código no banco
+                        const insertSql = "INSERT INTO password_reset_codes (userId, code, expiresAt) VALUES (?, ?, ?)";
+                        db.run(insertSql, [user.id, code, expiresAt.toISOString()], function(insertErr) {
+                            if (insertErr) {
+                                console.error('Erro ao salvar código:', insertErr);
+                                return reject({
+                                    status: 500,
+                                    message: "Erro ao gerar código de recuperação."
+                                });
+                            }
+
+                            resolve({
+                                status: 200,
+                                message: "Código de recuperação gerado com sucesso!",
+                                code: code, // Em produção, enviar por email
+                                userId: user.id,
+                                expiresIn: 15 // minutos
+                            });
+                        });
+                    });
+                });
+            });
+        } catch (error) {
+            throw {
+                status: 500,
+                message: "Erro ao processar recuperação de senha."
+            };
+        }
+    }
+
+    /**
+     * validateResetCode - Valida código de recuperação
+     * 
+     * @param {string} email - Email do usuário
+     * @param {string} code - Código de 6 dígitos
+     * @returns {Promise<Object>} Token temporário para reset
+     */
+    async validateResetCode(email, code) {
+        try {
+            return new Promise((resolve, reject) => {
+                // 1. Buscar usuário e código
+                const sql = `
+                    SELECT 
+                        rc.id as resetId,
+                        rc.code,
+                        rc.expiresAt,
+                        rc.used,
+                        u.id as userId,
+                        u.email,
+                        u.name
+                    FROM password_reset_codes rc
+                    INNER JOIN users u ON rc.userId = u.id
+                    WHERE u.email = ? AND rc.code = ?
+                    ORDER BY rc.createdAt DESC
+                    LIMIT 1
+                `;
+
+                db.get(sql, [email, code], (err, record) => {
+                    if (err) {
+                        return reject({
+                            status: 500,
+                            message: "Erro ao validar código."
+                        });
+                    }
+
+                    if (!record) {
+                        return reject({
+                            status: 400,
+                            message: "Código inválido."
+                        });
+                    }
+
+                    // 2. Verificar se já foi usado
+                    if (record.used === 1) {
+                        return reject({
+                            status: 400,
+                            message: "Código já foi utilizado."
+                        });
+                    }
+
+                    // 3. Verificar expiração
+                    const now = new Date();
+                    const expiresAt = new Date(record.expiresAt);
+                    
+                    if (now > expiresAt) {
+                        return reject({
+                            status: 400,
+                            message: "Código expirado. Solicite um novo código."
+                        });
+                    }
+
+                    // 4. Código válido - gerar token temporário para reset
+                    const resetToken = jwt.sign(
+                        {
+                            userId: record.userId,
+                            email: record.email,
+                            purpose: 'password-reset',
+                            resetId: record.resetId
+                        },
+                        process.env.JWT_SECRET,
+                        { expiresIn: '15m' } // Token expira em 15 min
+                    );
+
+                    resolve({
+                        status: 200,
+                        message: "Código válido!",
+                        resetToken: resetToken,
+                        userId: record.userId
+                    });
+                });
+            });
+        } catch (error) {
+            throw {
+                status: 500,
+                message: "Erro ao validar código."
+            };
+        }
+    }
+
+    /**
+     * resetPassword - Redefine a senha do usuário
+     * 
+     * @param {string} resetToken - Token temporário de reset
+     * @param {string} newPassword - Nova senha
+     * @returns {Promise<Object>} Confirmação
+     */
+    async resetPassword(resetToken, newPassword) {
+        try {
+            return new Promise((resolve, reject) => {
+                // 1. Verificar token
+                jwt.verify(resetToken, process.env.JWT_SECRET, (err, decoded) => {
+                    if (err) {
+                        return reject({
+                            status: 401,
+                            message: "Token inválido ou expirado."
+                        });
+                    }
+
+                    if (decoded.purpose !== 'password-reset') {
+                        return reject({
+                            status: 403,
+                            message: "Token não autorizado para esta operação."
+                        });
+                    }
+
+                    // 2. Hash da nova senha
+                    const salt = bcrypt.genSaltSync(10);
+                    const passwordHash = bcrypt.hashSync(newPassword, salt);
+
+                    // 3. Atualizar senha no banco
+                    const updateSql = "UPDATE users SET password = ? WHERE id = ?";
+                    db.run(updateSql, [passwordHash, decoded.userId], (updateErr) => {
+                        if (updateErr) {
+                            return reject({
+                                status: 500,
+                                message: "Erro ao atualizar senha."
+                            });
+                        }
+
+                        // 4. Marcar código como usado
+                        const markUsedSql = "UPDATE password_reset_codes SET used = 1 WHERE id = ?";
+                        db.run(markUsedSql, [decoded.resetId], (markErr) => {
+                            if (markErr) {
+                                console.error('Erro ao marcar código como usado:', markErr);
+                            }
+
+                            resolve({
+                                status: 200,
+                                message: "Senha redefinida com sucesso!"
+                            });
+                        });
+                    });
+                });
+            });
+        } catch (error) {
+            throw {
+                status: 500,
+                message: "Erro ao redefinir senha."
+            };
+        }
+    }
 }
 
 module.exports = new UserService();
