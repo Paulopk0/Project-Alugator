@@ -13,13 +13,13 @@ const items = [
         description: 'Parafusadeira profissional, perfeita para trabalhos leves e médios. Inclui bateria extra e maleta.',
         category: 'Ferramentas',
         condition: 'Excelente',
-        photos: 'parafusadeira', // Nome do asset 
+        photos: 'parafusadeira', // Nome do asset
         location: 'São Paulo, SP',
         status: 'available',
         securityDeposit: 50.00
     },
     {
-        ownerId: 1,
+        ownerId: 2,
         title: 'Guarda-Roupa Modular',
         priceDaily: 15.00,
         description: 'Guarda-roupa espaçoso, fácil de montar e desmontar. Ideal para mudanças temporárias.',
@@ -79,7 +79,7 @@ const items = [
         securityDeposit: 150.00
     },
     {
-        ownerId: 1,
+        ownerId: 3,
         title: 'Barraca de Camping 4 Pessoas',
         priceDaily: 28.00,
         description: 'Barraca impermeável para 4 pessoas. Fácil montagem, inclui bolsa.',
@@ -101,13 +101,13 @@ const seedItems = () => {
 
         if (row.count === 0) {
             console.log('📦 Inserindo itens iniciais...');
-            
+
             const insertPromises = items.map(item => {
                 return new Promise((resolve, reject) => {
-                    const sql = `INSERT INTO items 
-                        (ownerId, title, priceDaily, description, category, condition, photos, location, status, securityDeposit) 
+                    const sql = `INSERT INTO items
+                        (ownerId, title, priceDaily, description, category, condition, photos, location, status, securityDeposit)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-                    
+
                     db.run(sql, [
                         item.ownerId,
                         item.title,
