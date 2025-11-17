@@ -37,17 +37,32 @@ export function AuthProvider({ children }) {
       const savedToken = await AuthStorage.getToken();
       const savedUser = await AuthStorage.getUser();
       
+      console.log('[AuthContext] 📦 Dados recuperados:', {
+        hasToken: !!savedToken,
+        hasUser: !!savedUser,
+        tokenLength: savedToken?.length
+      });
+      
       if (savedToken && savedUser) {
         // Valida se o token ainda é válido
         try {
           const decoded = jwtDecode(savedToken);
+          
+          console.log('[AuthContext] 🔍 Token decodificado:', {
+            id: decoded.id,
+            email: decoded.email,
+            exp: decoded.exp,
+            expDate: new Date(decoded.exp * 1000).toISOString(),
+            now: new Date().toISOString(),
+            isExpired: decoded.exp * 1000 <= Date.now()
+          });
           
           // Verifica se expirou (exp está em segundos, Date.now() em ms)
           if (decoded.exp && decoded.exp * 1000 > Date.now()) {
             setToken(savedToken);
             setUser(savedUser);
             setIsSignout(false);
-            console.log('[AuthContext] ✅ Token restaurado e válido');
+            console.log('[AuthContext] ✅ Token restaurado e válido - usuário logado automaticamente');
           } else {
             // Token expirado - limpa e força novo login
             console.log('[AuthContext] ⚠️ Token expirado, limpando dados');
@@ -62,9 +77,13 @@ export function AuthProvider({ children }) {
           await AuthStorage.clearUser();
           setIsSignout(true);
         }
+      } else {
+        console.log('[AuthContext] ℹ️ Nenhum dado salvo encontrado - primeiro acesso');
+        setIsSignout(true);
       }
     } catch (error) {
-      console.error('[AuthContext] Erro ao restaurar sessão:', error);
+      console.error('[AuthContext] 💥 Erro ao restaurar sessão:', error);
+      setIsSignout(true);
     } finally {
       setLoading(false);
     }
@@ -158,7 +177,7 @@ export function AuthProvider({ children }) {
         return { success: true, message: 'Cadastro realizado com sucesso!' };
       } else if (response.userId) {
         // Fallback: Registro retornou só userId (API antiga), faz login automático
-        console.log('[AuthContext] Usuário criado com ID:', response.userId, '- fazendo login automático...');
+        console.log('[AuthContext] 🔄 Usuário criado com ID:', response.userId, '- fazendo login automático...');
         const loginResult = await handleLogin(email, password);
         return loginResult;
       } else {

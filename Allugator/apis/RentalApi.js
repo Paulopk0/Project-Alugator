@@ -1,3 +1,19 @@
+/*
+ * RentalApi
+ *
+ * Camada de comunicação com os endpoints de aluguel (`/rentals`).
+ * Responsabilidades principais:
+ * - Criar / consultar / atualizar / cancelar aluguéis
+ * - Consultar disponibilidade (por item ou por intervalo de datas)
+ * - Confirmar retirada/devolução e pagamentos
+ *
+ * Observações importantes:
+ * - Todas as chamadas usam o token JWT salvo em `AuthStorage` via `getAuthHeaders()`;
+ *   chamadas sem token irão falhar no backend com 401.
+ * - Ao alterar rotas no backend, atualize as constantes e os consumidores (contexts/screens).
+ * - Evite logar dados sensíveis (informações de pagamento, tokens) em produção.
+ */
+
 import AuthStorage from '../services/AuthStorage';
 import API_URL from '../config/api';
 

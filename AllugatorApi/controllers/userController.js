@@ -299,6 +299,122 @@ class UserController {
             });
         }
     }
+
+    /**
+     * Solicita código de recuperação de senha
+     * 
+     * @route POST /api/users/forgot-password
+     * @auth Não requer autenticação
+     * @access Public
+     */
+    async forgotPassword(req, res) {
+        try {
+            const { email } = req.body;
+
+            if (!email) {
+                return res.status(400).json({
+                    status: 400,
+                    message: "Email é obrigatório."
+                });
+            }
+
+            const result = await userService.generateResetCode(email);
+            
+            if (result.status === 200) {
+                // Enviar email com o código
+                const { sendEmail } = require('../utils/email');
+                try {
+                    await sendEmail(
+                        email, 
+                        'Código de recuperação de senha - Allugator', 
+                        `Olá!\n\nSeu código de recuperação de senha é: ${result.code}\n\nEste código expira em 15 minutos.\n\nSe você não solicitou esta recuperação, ignore este email.\n\nAtenciosamente,\nEquipe Allugator`
+                    );
+                } catch (emailError) {
+                    console.error('Erro ao enviar email:', emailError);
+                    return res.status(500).json({
+                        status: 500,
+                        message: "Erro ao enviar email de recuperação: " + (emailError.message || emailError)
+                    });
+                }
+            }
+
+            res.status(200).json({
+                status: 200,
+                message: "Código de recuperação enviado para seu e-mail."
+            });
+        } catch (error) {
+            const status = error.status || 500;
+            res.status(status).json({
+                status: status,
+                message: error.message || 'Erro ao processar recuperação de senha'
+            });
+        }
+    }
+
+    /**
+     * Valida código de recuperação
+     * 
+     * @route POST /api/users/validate-code
+     * @auth Não requer autenticação
+     * @access Public
+     */
+    async validateCode(req, res) {
+        try {
+            const { email, code } = req.body;
+
+            if (!email || !code) {
+                return res.status(400).json({
+                    status: 400,
+                    message: "Email e código são obrigatórios."
+                });
+            }
+
+            const result = await userService.validateResetCode(email, code);
+            res.status(result.status).json(result);
+        } catch (error) {
+            const status = error.status || 500;
+            res.status(status).json({
+                status: status,
+                message: error.message || 'Erro ao validar código'
+            });
+        }
+    }
+
+    /**
+     * Redefine a senha usando token de reset
+     * 
+     * @route POST /api/users/reset-password
+     * @auth Requer resetToken
+     * @access Public
+     */
+    async resetPassword(req, res) {
+        try {
+            const { resetToken, newPassword } = req.body;
+
+            if (!resetToken || !newPassword) {
+                return res.status(400).json({
+                    status: 400,
+                    message: "Token e nova senha são obrigatórios."
+                });
+            }
+
+            if (newPassword.length < 6) {
+                return res.status(400).json({
+                    status: 400,
+                    message: "A senha deve ter no mínimo 6 caracteres."
+                });
+            }
+
+            const result = await userService.resetPassword(resetToken, newPassword);
+            res.status(result.status).json(result);
+        } catch (error) {
+            const status = error.status || 500;
+            res.status(status).json({
+                status: status,
+                message: error.message || 'Erro ao redefinir senha'
+            });
+        }
+    }
 }
 
 module.exports = new UserController();

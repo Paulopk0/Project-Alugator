@@ -144,11 +144,16 @@ const CalendarScreen = ({ navigation, route }) => {
             <TouchableOpacity
               style={styles.confirmButton}
               onPress={() => {
-                // Passa a data de volta e fecha o modal
-                if (route.params?.onSelectDate) {
-                  route.params.onSelectDate(selected);
+                // Passa a data de volta de forma serializável (navegando para a tela de origem)
+                // Evita passar funções via navigation params (não-serializáveis).
+                const target = route.params?.from || 'Search';
+                try {
+                  navigation.navigate(target, { selectedDate: selected });
+                } catch (e) {
+                  // fallback: apenas volta
+                  console.warn('Não foi possível navegar de volta para', target, e);
+                  navigation.goBack();
                 }
-                navigation.goBack();
               }}
             >
               <Text style={styles.confirmButtonText}>Confirmar Data</Text>

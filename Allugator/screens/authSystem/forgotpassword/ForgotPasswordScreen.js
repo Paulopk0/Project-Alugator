@@ -1,23 +1,63 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, StatusBar, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import CustomButton from '../../../components/CustomButton/CustomButton';
 import CustomTextInput from '../../../components/CustomTextInput/CustomTextInput';
+import MessageDisplay from '../../../components/MessageDisplay/MessageDisplay';
+import { requestPasswordReset } from '../../../apis/PasswordResetApi';
 
 const COLORS = {
   background: '#F0FFF0', 
   primary: '#1DE9B6',
   darkText: '#444444ff',
   white: '#FFFFFF',
+  error: '#FF5252',
+  success: '#4CAF50',
 };
 
 const ForgotPasswordScreen = ({ navigation }) => {
-  // Obtém a altura da tela para o posicionamento (movido para dentro)
   const screenHeight = Dimensions.get('window').height;
   
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState({ message: '', type: '' });
 
-  const handleNextStep = () => {
-    console.log('Enviando e-mail de recuperação para:', email);
+  const handleNextStep = async () => {
+    try {
+      if (!email) {
+        setFeedback({ message: 'Por favor, insira seu email.', type: 'error' });
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setFeedback({ message: 'Por favor, insira um email válido.', type: 'error' });
+        return;
+      }
+
+      setLoading(true);
+      setFeedback({ message: '', type: '' });
+
+      const response = await requestPasswordReset(email);
+
+      setFeedback({
+        message: 'Código enviado para seu e-mail! Verifique sua caixa de entrada.',
+        type: 'success'
+      });
+
+      // Navega para tela de validação do código
+      setTimeout(() => {
+        navigation.navigate('ValidateCode', { email });
+      }, 2000);
+
+    } catch (error) {
+      console.error('Erro ao solicitar recuperação:', error);
+      setFeedback({
+        message: error.message || 'Erro ao enviar código. Tente novamente.',
+        type: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -39,20 +79,43 @@ const ForgotPasswordScreen = ({ navigation }) => {
             Por favor, insira seu endereço de e-mail para iniciar o processo de recuperação de senha.
           </Text>
 
+          {feedback.message ? (
+            <MessageDisplay 
+              message={feedback.message} 
+              type={feedback.type} 
+            />
+          ) : null}
+
           <CustomTextInput
             label="Digite Seu Email"
             placeholder="exemplo@exemplo.com"
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            editable={!loading}
           />
+          
           <CustomButton
-            title="Próximo Passo"
+            title={loading ? "Enviando..." : "Próximo Passo"}
             onPress={handleNextStep}
             style={{ backgroundColor: COLORS.primary, marginTop: 30, width: '100%' }}
+            disabled={loading}
           />
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Text style={styles.backButtonText}>Voltar</Text>
+
+          {loading && (
+            <ActivityIndicator 
+              size="small" 
+              color={COLORS.primary} 
+              style={{ marginTop: 15 }} 
+            />
+          )}
+
+          <TouchableOpacity 
+            onPress={() => navigation.goBack()} 
+            style={styles.backButton}
+            disabled={loading}
+          >
+            <Text style={styles.backButtonText}>Voltar</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

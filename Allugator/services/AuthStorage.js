@@ -3,8 +3,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const TOKEN_KEY = '@allugator:token';
 const USER_KEY = '@allugator:user';
 
-/**
- * Serviço para gerenciar tokens de autenticação
+/*
+ * AuthStorage
+ * Serviço responsável por persistir informações de autenticação no AsyncStorage.
+ * Blocos importantes:
+ * - saveToken / getToken / removeToken: manipulação direta do token JWT
+ * - saveUser / getUser / removeUser: serialize/deserialize do objeto usuário
+ * - clearAuth: remove token e usuário de forma atômica
+ *
+ * Atenção:
+ * - Não exponha o token além do necessário. Use `AuthContext` para gerenciar estado em memória.
+ * - AsyncStorage pode falhar; tratamos erros com logs e repassamos exceções quando crítico.
  */
 const AuthStorage = {
     /**

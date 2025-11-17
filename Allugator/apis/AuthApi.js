@@ -1,3 +1,17 @@
+/*
+ * AuthApi
+ *
+ * Responsabilidade: camada de chamadas HTTP relacionadas à autenticação.
+ * Blocos importantes:
+ * - `login`, `register`: endpoints que retornam token + user ou mensagens de erro.
+ * - `getUserProfile`: utiliza token salvo em `AuthStorage` via `getAuthHeaders()`.
+ * - `logout`: local; limpa storage (server-side logout é opcional).
+ *
+ * Segurança / Operação:
+ * - Não exponha tokens ou senhas em logs em produção.
+ * - `getAuthHeaders()` lê o token via `AuthStorage` e adiciona `Authorization`.
+ */
+
 import AuthStorage from '../services/AuthStorage';
 import API_URL from '../config/api';
 

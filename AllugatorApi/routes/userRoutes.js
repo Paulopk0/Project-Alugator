@@ -3,8 +3,15 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { authenticateToken } = require('../middlewares/authMiddleware');
 
+// Rotas de autenticação
 router.post('/register', userController.register.bind(userController));
 router.post('/login', userController.login.bind(userController));
+
+// Rotas de recuperação de senha
+router.post('/forgot-password', userController.forgotPassword.bind(userController));
+router.post('/validate-code', userController.validateCode.bind(userController));
+router.post('/reset-password', userController.resetPassword.bind(userController));
+
 router.get('/', userController.getAll.bind(userController));
 
 
