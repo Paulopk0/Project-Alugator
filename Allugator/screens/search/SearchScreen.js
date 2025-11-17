@@ -135,6 +135,21 @@ const SearchScreen = ({ navigation, route }) => {
     setPublishDate(new Date(dateString));
   };
 
+  // Se a tela recebeu uma data selecionada via params (ex: vindo do Calendar),
+  // aplicamos ao estado. Isso evita passar funções pelo `navigation` (não-serializável).
+  React.useEffect(() => {
+    if (route?.params?.selectedDate) {
+      try {
+        const d = new Date(route.params.selectedDate);
+        if (!Number.isNaN(d.getTime())) {
+          setPublishDate(d);
+        }
+      } catch (e) {
+        // ignore invalid date
+      }
+    }
+  }, [route?.params?.selectedDate]);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -252,10 +267,7 @@ const SearchScreen = ({ navigation, route }) => {
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.calendarButton}
-                onPress={() => navigation.navigate('Calendar', { 
-                  from: 'Search',
-                  onSelectDate: handleSelectDate 
-                })}
+                onPress={() => navigation.navigate('Calendar', { from: 'Search' })}
               >
                 <Text style={styles.calendarIcon}>📅</Text>
               </TouchableOpacity>

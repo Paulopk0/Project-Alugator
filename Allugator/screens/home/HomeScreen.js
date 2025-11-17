@@ -111,6 +111,7 @@ const HomeScreen = ({ navigation }) => {
         }).reduce((sum, rental) => sum + rental.totalPrice, 0).toFixed(2));
 
         formattedTransactions.push(rentedOutItems.rentals.map(rental => ({
+          id: rental.id,
           type: 'earning',
           date: formatDate(rental.startDate),
           name: rental.itemTitle,

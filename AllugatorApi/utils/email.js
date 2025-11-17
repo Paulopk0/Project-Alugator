@@ -16,7 +16,6 @@ async function sendEmail(to, subject, text) {
     let usingEthereal = false;
 
     if (smtpHost && smtpUser && smtpPass) {
-      console.log('Usando SMTP configurado via variáveis de ambiente:', smtpHost);
       transporter = nodemailer.createTransport({
         host: smtpHost,
         port: Number(smtpPort),
@@ -29,18 +28,15 @@ async function sendEmail(to, subject, text) {
       try {
         console.log('Verificando conexão SMTP...');
         await transporter.verify();
-        console.log('Conexão SMTP verificada com sucesso.');
+       
       } catch (verifyErr) {
         console.error('Falha ao verificar conexão SMTP:', verifyErr);
         throw verifyErr;
       }
     } else {
       // Fallback para Ethereal em desenvolvimento (preview URL)
-      console.log('Sem SMTP configurado — criando conta de teste Ethereal...');
-      let testAccount = await nodemailer.createTestAccount();
-      console.log('Conta Ethereal criada:', testAccount.user);
-
-      transporter = nodemailer.createTransport({
+  let testAccount = await nodemailer.createTestAccount();
+     transporter = nodemailer.createTransport({
         host: 'smtp.ethereal.email',
         port: 587,
         secure: false,
@@ -56,8 +52,7 @@ async function sendEmail(to, subject, text) {
     if (usingEthereal) {
       try {
         await transporter.verify();
-        console.log('Conexão Ethereal verificada.');
-      } catch (ethVerifyErr) {
+  } catch (ethVerifyErr) {
         console.error('Falha ao verificar conexão Ethereal:', ethVerifyErr);
       }
     }
@@ -68,7 +63,6 @@ async function sendEmail(to, subject, text) {
       text
     });
 
-    console.log('Email enviado: %s', info.messageId);
     if (usingEthereal) {
       const preview = nodemailer.getTestMessageUrl(info);
       console.log('URL de preview (Ethereal): %s', preview);
