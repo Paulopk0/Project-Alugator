@@ -1,3 +1,16 @@
+/*
+ * FavoriteApi
+ *
+ * Endpoints para gerenciamento de favoritos do usuário.
+ * Blocos importantes:
+ * - `getAuthHeaders()`: obtém token do `AuthStorage`. Em caso de falha retorna
+ *    headers sem Authorization para permitir chamadas públicas.
+ * - `toggleFavorite`: comportamento utilitário para alternar favorito.
+ *
+ * Observação: algumas operações retornam estruturas distintas (array direto
+ * ou objeto com `favoriteIds`) — os consumers (ex.: `ItemContext`) tratam essas variações.
+ */
+
 import AuthStorage from '../services/AuthStorage';
 import API_URL from '../config/api';
 

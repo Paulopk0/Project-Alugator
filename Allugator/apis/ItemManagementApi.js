@@ -1,3 +1,15 @@
+/*
+ * ItemManagementApi
+ *
+ * Operações que alteram ou retornam dados específicos do usuário (criador do item):
+ * - `createItem`, `getMyItems`, `getMyItemsWithRentals`, `updateItem`, `deleteItem`.
+ *
+ * Observações:
+ * - Muitas chamadas logam detalhes (dados do item, headers) para debug; remova logs
+ *   sensíveis em produção (ex.: dados de usuário, URLs com tokens).
+ * - Ao atualizar ou deletar, garanta sincronização com `ItemContext` para manter UI consistente.
+ */
+
 import AuthStorage from '../services/AuthStorage';
 import API_URL from '../config/api';
 

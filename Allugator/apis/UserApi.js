@@ -22,6 +22,13 @@ const getAuthHeaders = async () => {
  * @param {string} name - Novo nome
  * @param {string} phoneNumber - Novo telefone
  * @returns {Promise<Object>} Resposta da API com usuário atualizado
+ *
+ * Nota de segurança/uso:
+ * - `getAuthHeaders()` lança se não houver token. Chamadas para este arquivo
+ *   devem ser feitas quando o usuário estiver autenticado.
+ * - As funções adicionam `statusCode` ao objeto retornado para facilitar
+ *   decisões de UI (ex.: diferenciar erro 400 de 500). Mantenha esse comportamento
+ *   se for consumido em vários lugares.
  */
 export const updateProfile = async (name, phoneNumber) => {
   try {

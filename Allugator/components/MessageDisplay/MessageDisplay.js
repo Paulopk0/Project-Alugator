@@ -1,6 +1,18 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View, Text, Animated } from 'react-native';
 
+/*
+ * MessageDisplay
+ * Componente responsável por exibir mensagens temporárias (erros/sucesso).
+ * Blocos importantes:
+ * - Animação: fade in/fade out usando `Animated.Value`.
+ * - Auto hide: esconde automaticamente após 3s e chama `onHide()` para o pai
+ *   limpar o estado da mensagem.
+ *
+ * Observações:
+ * - `useNativeDriver: false` foi mantido por compatibilidade com propriedades
+ *   animadas usadas (opacidade). Trocar para `true` pode exigir mudanças.
+ */
 const MessageDisplay = ({ message, type = 'error', onHide }) => {
   const opacity = new Animated.Value(0);
 

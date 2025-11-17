@@ -1,8 +1,14 @@
 /**
- * Hook useAuth - Acesso fácil ao contexto de autenticação
- * 
- * Uso:
+ * useAuth
+ * Hook que fornece acesso simplificado ao `AuthContext`.
+ *
+ * Uso típico:
  * const { user, token, login, logout, isAuthenticated } = useAuth();
+ *
+ * Blocos importantes / avisos:
+ * - Lança exceção se usado fora do `AuthProvider` para evitar acesso nulo.
+ * - Ideal para componentes e handlers; para lógica complexa prefira chamar
+ *   diretamente funções do `AuthContext` quando necessário.
  */
 
 import { useContext } from 'react';

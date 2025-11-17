@@ -4,12 +4,17 @@ import Styles from './Style';
 
 /**
  * Componente de botão customizado e reutilizável.
- * Baseado no componente CustomButtom do capítulo 3 do PDF.
- * @param {object} props - Propriedades do componente.
- * @param {string} props.title - O texto a ser exibido no botão.
- * @param {function} props.onPress - A função a ser chamada quando o botão for pressionado.
- * @param {object} props.style - Estilos adicionais para o container do botão.
- * @param {object} props.textStyle - Estilos adicionais para o texto do botão.
+ * Baseado no componente CustomButton do projeto.
+ *
+ * Bloco importante: este componente é usado em muitos formulários e ações-chave
+ * (login, registro, formulários de item). Qualquer alteração na API (props)
+ * deve ser refletida em todos os usos.
+ *
+ * Props:
+ * - `title` (string): texto exibido
+ * - `onPress` (function): callback ao pressionar
+ * - `style` (object): estilos do container
+ * - `textStyle` (object): estilos do texto
  */
 function CustomButton({ title, onPress, style, textStyle }) {
   return (

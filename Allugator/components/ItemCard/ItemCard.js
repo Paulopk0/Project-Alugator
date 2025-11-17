@@ -8,6 +8,17 @@ const COLORS = {
   white: '#FFFFFF',
 };
 
+/*
+ * ItemCard
+ * Cartão reutilizável que apresenta um item na lista (imagem, título, preço)
+ * Blocos importantes:
+ * - `onPress(item)`: navegar para detalhe do item;
+ * - `onFavorite(id, isFavorite)`: alterna favorito (atenção a atualizações do estado remoto);
+ * - `onShare(item)`: abrir share sheet
+ *
+ * Observação: `item.image` deve ser uma fonte válida para <Image>. Se usar URIs,
+ * garanta que os objetos estejam no formato correto.
+ */
 const ItemCard = ({ item, onPress, onFavorite, onShare, isFavorite = false }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={() => onPress(item)}>

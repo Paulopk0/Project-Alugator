@@ -1,3 +1,15 @@
+/*
+ * ItemApi
+ *
+ * Camada de comunicação com a API para operações de leitura (items):
+ * - `getAllItems`, `getItemById`, `searchItems`, `getMyItems`, `createItem`.
+ *
+ * Observações importantes:
+ * - `getAuthHeaders()` injeta o token quando presente; todas as chamadas usam esse helper.
+ * - `searchItems()` constrói query string com `URLSearchParams` — ao alterar filtros,
+ *   mantenha compatibilidade com os parâmetros esperados pelo backend.
+ */
+
 import AuthStorage from '../services/AuthStorage';
 import API_URL from '../config/api';
 

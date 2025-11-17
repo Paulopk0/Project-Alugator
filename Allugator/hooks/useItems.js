@@ -1,8 +1,14 @@
 /**
- * Hook useItems - Acesso fácil ao contexto de itens
- * 
+ * useItems
+ * Hook helper para acessar `ItemContext` de forma simples.
+ *
  * Uso:
  * const { items, favorites, handleCategoryFilter } = useItems();
+ *
+ * Nota:
+ * - Lança se usado fora de `ItemProvider`.
+ * - Para operações pesadas (ex.: sincronizações em lote), prefira chamar
+ *   os métodos do contexto diretamente para maior controle de estado.
  */
 
 import { useContext } from 'react';

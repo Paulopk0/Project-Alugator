@@ -40,6 +40,15 @@ const COLORS = {
   shadow: '#00000026',
 };
 
+/*
+ * Nota de manutenção:
+ * - Esta tela carrega todos os itens do dono via `loadMyItems()` e itens gerais
+ *   via `loadItems()`. Se o backend suportar paginação, considere paginar
+ *   aqui para reduzir uso de memória e tempo de carregamento em catálogos
+ *   grandes.
+ * - Evite chamadas redundantes a `loadItems()` em re-renders; use memoização
+ *   ou `useFocusEffect` para recarregar apenas quando a tela ficar em foco.
+ */
 const StoreScreen = ({ navigation }) => {
   // Altura da tela para cálculos de layout (movido para dentro do componente)
   const screenHeight = Dimensions.get('window').height;

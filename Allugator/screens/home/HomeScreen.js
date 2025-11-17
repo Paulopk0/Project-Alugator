@@ -23,6 +23,21 @@ const COLORS = {
   expenseBlue: '#0046FF'
 };
 
+/*
+ * HomeScreen
+ *
+ * Tela de resumo financeiro e transações do usuário.
+ * Blocos importantes:
+ * - `loadTransactions()`: busca aluguéis como locatário (`getUserRentals`) e
+ *    como proprietário (`getMyRentedOutItems`) e calcula totais/segmentos.
+ * - `calculatePrice()`: calcula valor por período (diário/semana/mês).
+ *
+ * Observações:
+ * - A lógica de cálculo de datas assume strings ISO vindas do backend;
+ *   se mudar o formato no backend, atualizar parsing/validação.
+ * - Evite chamadas repetidas a `loadTransactions()` sem debounce em componentes
+ *   que possam re-renderizar várias vezes.
+ */
 const HomeScreen = ({ navigation }) => {
   const { height: screenHeight } = Dimensions.get('window');
 
