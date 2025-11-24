@@ -40,7 +40,10 @@ export const createRental = async (rentalData) => {
     });
     
     const data = await response.json();
-    return data;
+    return {
+      status: response.status,
+      ...data
+    };
   } catch (error) {
     console.error('Erro ao criar aluguel:', error);
     throw error;
@@ -142,7 +145,10 @@ export const confirmPickup = async (rentalId) => {
     });
     
     const data = await response.json();
-    return data;
+    return {
+      status: response.status,
+      ...data
+    };
   } catch (error) {
     console.error('Erro ao confirmar retirada:', error);
     throw error;
@@ -166,7 +172,10 @@ export const confirmReturn = async (rentalId) => {
       throw new Error(data.message || 'Erro ao confirmar devolução');
     }
     
-    return data;
+    return {
+      status: response.status,
+      ...data
+    };
   } catch (error) {
     console.error('❌ Erro ao confirmar devolução:', error);
     throw error;

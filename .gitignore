@@ -41,7 +41,7 @@ yarn-error.*
 /android
 
 # Arquivos de ambiente
-.env
+
 
 # Arquivos de banco de dados SQLite
 *.sqlite

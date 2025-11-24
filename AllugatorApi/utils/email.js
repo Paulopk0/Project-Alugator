@@ -2,7 +2,6 @@ const nodemailer = require('nodemailer');
 
 /**
  * Envia um email usando SMTP de teste (Ethereal)
- * Para produção, configure um SMTP real (Gmail, SendGrid, etc.)
  */
 async function sendEmail(to, subject, text) {
   try {

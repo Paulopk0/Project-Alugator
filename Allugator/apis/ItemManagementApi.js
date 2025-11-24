@@ -33,7 +33,10 @@ export const createItem = async (itemData) => {
     });
     
     const data = await response.json();
-    return data;
+    return {
+      status: response.status,
+      ...data
+    };
   } catch (error) {
     console.error('Erro ao criar item:', error);
     throw error;
@@ -96,7 +99,10 @@ export const updateItem = async (itemId, itemData) => {
     const data = await response.json();
     console.log('📥 Response data:', data);
     
-    return data;
+    return {
+      status: response.status,
+      ...data
+    };
   } catch (error) {
     console.error('❌ Erro ao atualizar item:', error);
     throw error;
@@ -113,7 +119,10 @@ export const deleteItem = async (itemId) => {
     });
     
     const data = await response.json();
-    return data;
+    return {
+      status: response.status,
+      ...data
+    };
   } catch (error) {
     console.error('Erro ao deletar item:', error);
     throw error;

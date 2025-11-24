@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { getRentalById, confirmPickup, confirmReturn } from '../../../apis/RentalApi';
 import imageMap from '../../../assets/images/imageMap';
+import MessageDisplay from '../../../components/MessageDisplay/MessageDisplay';
 
 const RentalTrackingScreen = ({ route, navigation }) => {
     const { rentalId, isNewRental } = route.params;
@@ -18,6 +19,7 @@ const RentalTrackingScreen = ({ route, navigation }) => {
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [confirmationModal, setConfirmationModal] = useState(null); // { type: 'pickup' | 'return', stepTitle: string }
+    const [message, setMessage] = useState(null);
 
     useEffect(() => {
         loadRentalDetails();
@@ -25,11 +27,7 @@ const RentalTrackingScreen = ({ route, navigation }) => {
         // Mostra mensagem de sucesso se for um novo aluguel
         if (isNewRental) {
             setTimeout(() => {
-                Alert.alert(
-                    '🎉 Pagamento Confirmado!',
-                    'Seu aluguel foi realizado com sucesso. Você pode acompanhar o status aqui.',
-                    [{ text: 'OK' }]
-                );
+                setMessage({ text: '🎉 Pagamento Confirmado! Seu aluguel foi realizado com sucesso. Você pode acompanhar o status aqui.', type: 'success' });
             }, 500);
         }
     }, []);
@@ -54,7 +52,7 @@ const RentalTrackingScreen = ({ route, navigation }) => {
             }
         } catch (error) {
             console.error('Erro ao carregar detalhes do aluguel:', error);
-            Alert.alert('Erro', 'Não foi possível carregar os detalhes do aluguel');
+            setMessage({ text: 'Não foi possível carregar os detalhes do aluguel', type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -103,7 +101,7 @@ const RentalTrackingScreen = ({ route, navigation }) => {
                     ? '✅ Retirada confirmada com sucesso!' 
                     : '✅ Devolução confirmada com sucesso!';
                 
-                Alert.alert('Sucesso!', successMessage);
+                setMessage({ text: successMessage, type: 'success' });
                 
                 // Se foi devolução, redireciona após 2 segundos
                 if (type === 'return') {
@@ -112,11 +110,11 @@ const RentalTrackingScreen = ({ route, navigation }) => {
                     }, 2000);
                 }
             } else {
-                Alert.alert('Erro', response.message || 'Não foi possível confirmar a ação');
+                setMessage({ text: response.message || 'Não foi possível confirmar a ação', type: 'error' });
             }
         } catch (error) {
             console.error('Erro ao confirmar ação:', error);
-            Alert.alert('Erro', 'Não foi possível confirmar a ação: ' + error.message);
+            setMessage({ text: 'Não foi possível confirmar a ação: ' + error.message, type: 'error' });
         } finally {
             setActionLoading(false);
         }
@@ -229,6 +227,11 @@ const RentalTrackingScreen = ({ route, navigation }) => {
             >
                 {/* Card branco com conteúdo */}
                 <View style={styles.contentCard}>
+                    <MessageDisplay
+                        message={message?.text}
+                        type={message?.type}
+                        onHide={() => setMessage(null)}
+                    />
                     {/* Item Info Card */}
                     <View style={styles.itemInfoCard}>
                         <Text style={styles.itemName}>{rental.item?.title || 'Item'}</Text>
