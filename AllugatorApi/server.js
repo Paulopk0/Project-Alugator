@@ -5,6 +5,7 @@ const userRoutes = require('./routes/userRoutes');
 const itemRoutes = require('./routes/itemRoutes');
 const favoriteRoutes = require('./routes/favoriteRoutes');
 const rentalRoutes = require('./routes/rentalRoutes');
+const createTables = require('./database/migrations/createTables');
 
 const app = express();
 // Configuração explícita de CORS para permitir o header Authorization
@@ -41,6 +42,11 @@ app.get('/', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 API rodando em http://localhost:${PORT}`);
+createTables().then(() => {
+    app.listen(PORT, () => {
+        console.log(`🚀 API rodando em http://localhost:${PORT}`);
+    });
+}).catch((error) => {
+    console.error('Erro ao criar/verificar tabelas:', error);
+    process.exit(1);
 });
