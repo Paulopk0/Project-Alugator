@@ -19,6 +19,7 @@ import {
   Alert,
 } from 'react-native';
 import { createRental } from '../../../apis/RentalApi';
+import MessageDisplay from '../../../components/MessageDisplay/MessageDisplay';
 
 // Paleta de cores do aplicativo
 const COLORS = {
@@ -40,6 +41,7 @@ const ProcessingPaymentScreen = ({ route, navigation }) => {
   // Estados de processamento
   const [processingStep, setProcessingStep] = useState(0);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [message, setMessage] = useState(null);
   
   // Mensagens de processamento para feedback visual
   const processingMessages = [

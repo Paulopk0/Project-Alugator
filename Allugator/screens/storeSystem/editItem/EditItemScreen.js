@@ -18,6 +18,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { updateItem } from '../../../apis/ItemManagementApi';
+import MessageDisplay from '../../../components/MessageDisplay/MessageDisplay';
 
 // Paleta de cores do aplicativo
 const COLORS = {
@@ -44,6 +45,7 @@ const EditItemScreen = ({ route, navigation }) => {
   const [location, setLocation] = useState(item.location || '');
   const [securityDeposit, setSecurityDeposit] = useState(item.securityDeposit?.toString() || '0');
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
 
   // Categorias disponíveis
   const categories = [
@@ -67,21 +69,23 @@ const EditItemScreen = ({ route, navigation }) => {
    * Valida e submete o formulário
    */
   const handleSubmit = async () => {
+    setMessage(null); // Clear previous messages
+    
     // Validações
     if (!title.trim()) {
-      Alert.alert('Erro', 'Por favor, preencha o título do item');
+      setMessage({ text: 'Por favor, preencha o título do item', type: 'error' });
       return;
     }
     if (!priceDaily || parseFloat(priceDaily) <= 0) {
-      Alert.alert('Erro', 'Por favor, informe um preço válido');
+      setMessage({ text: 'Por favor, informe um preço válido', type: 'error' });
       return;
     }
     if (!category) {
-      Alert.alert('Erro', 'Por favor, selecione uma categoria');
+      setMessage({ text: 'Por favor, selecione uma categoria', type: 'error' });
       return;
     }
     if (!condition) {
-      Alert.alert('Erro', 'Por favor, selecione uma condição');
+      setMessage({ text: 'Por favor, selecione uma condição', type: 'error' });
       return;
     }
 
@@ -109,22 +113,17 @@ const EditItemScreen = ({ route, navigation }) => {
 
       if (response.status === 200) {
         console.log('✅ Item atualizado com sucesso!');
-        Alert.alert('Sucesso', 'Item atualizado com sucesso!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              console.log('⬅️ Voltando para tela anterior');
-              navigation.goBack();
-            },
-          },
-        ]);
+        setMessage({ text: 'Item atualizado com sucesso!', type: 'success' });
+        setTimeout(() => {
+          navigation.goBack();
+        }, 1500);
       } else {
         console.error('❌ Erro na resposta:', response);
-        Alert.alert('Erro', response.message || 'Não foi possível atualizar o item');
+        setMessage({ text: response.message || 'Não foi possível atualizar o item', type: 'error' });
       }
     } catch (error) {
       console.error('❌ Erro ao atualizar item:', error);
-      Alert.alert('Erro', 'Não foi possível atualizar o item: ' + error.message);
+      setMessage({ text: 'Não foi possível atualizar o item: ' + error.message, type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -155,6 +154,11 @@ const EditItemScreen = ({ route, navigation }) => {
         contentContainerStyle={[styles.scrollContainer, { paddingTop: screenHeight * 0.18 }]}
       >
         <View style={styles.contentCard}>
+          <MessageDisplay
+            message={message?.text}
+            type={message?.type}
+            onHide={() => setMessage(null)}
+          />
           {/* Título */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Título *</Text>
